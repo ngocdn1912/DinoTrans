@@ -1,0 +1,183 @@
+﻿@inject IConstructionMachineService ConstructionMachineService
+@inject IJSRuntime js
+@inject ITenderService TenderService
+<div class="card-body">
+    <header><b>3. Tổng quan đấu thầu</b></header>
+    <hr />
+    <label>Thời gian diễn ra đấu thầu</label>
+    <div style="background-color:lightgray">
+        Từ ngày @TenderStartTime tới ngày @TenderEndTime
+    </div>
+    <br />
+
+    <label>Thông tin chi tiết</label>
+    <div>
+        Số hiệu thầu: @($"#000{NewTender!.Id}")
+    </div>
+    <div>
+        Tên thầu: @($"#000{NewTender!.Name}")
+    </div>
+    <div style="border:1px solid grey">
+        @foreach (var item in ConstructionMachines!)
+        {
+            <div style="padding:5px;">Tên máy: @item.Name - Nhãn hiệu: @item.Brand - Số sêri: @item.SerialNumber</div>
+        }
+    </div>
+    <br />
+    <div class="col-md-12 row">
+        <div class="col-md-4 column">
+            <div>
+                <label>
+                    Thông tin nhận hàng
+                </label>
+                <hr />
+                <div><strong>Thời gian nhận hàng sớm nhất </strong></div>
+                <div>@TenderPickUpDate</div>
+                <div><strong>Địa chỉ nhận hàng </strong></div>
+                <div>@NewTender!.PickUpAddress</div>
+                <div><strong>Liên lạc tại nơi nhận hàng </strong></div>
+                <div>@NewTender!.PickUpContact</div>
+            </div>
+            <hr />
+            <div>
+                <label>
+                    Tài liệu đính kèm
+                </label>
+                <div>
+                    @if (docs.Count > 0)
+                    {
+                        foreach (var item in docs)
+                        {
+                            int indexOfUnderscore = item.DocumentName.IndexOf('_');
+
+                            if (indexOfUnderscore != -1)
+                            {
+                                // Lấy chuỗi sau dấu `_` đầu tiên
+                                string afterUnderscore = item.DocumentName.Substring(indexOfUnderscore + 1);
+                                <div>
+                                    <img src="/images/PDF_file_icon.svg.png" style="max-width:20px; max-height:20px;"/>
+                                    <a href="@item.Document" target="_blank">@afterUnderscore</a>
+                                    <br />
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 column">
+            <div>
+                <label>
+                    Thông tin giao hàng
+                </label>
+                <hr />
+                <div><strong>Thời gian giao hàng sớm nhất </strong></div>
+                <div>@TenderDeliveryDate</div>
+                <div><strong>Địa chỉ giao hàng </strong></div>
+                <div>@NewTender!.DeliveryAddress</div>
+                <div><strong>Liên lạc tại nơi giao hàng </strong></div>
+                <div>@NewTender!.DeliveryContact</div>
+            </div>
+            <hr />
+            <div>
+                <label>Ghi chú</label>
+                <br />
+                <textarea disabled style="background-color:lightgrey; width:100%;padding:5px;">
+                    @NewTender.Notes
+                </textarea>
+            </div>
+        </div>
+        <div class="col-md-4 column" style="display: float-end">
+<img src="images/490px-Magnifying_glass_icon.svg.png" width="200">      
+</div>
+    </div>
+    <div class="form-group row float-end me-4">
+        <div class="d-flex">
+            <button class="btn btn-outline-success mt-4 me-2" type="submit" @onclick="BackToStep2" style="white-space: nowrap; border-radius: 0;">&lt; Bước trước</button>
+            <button class="btn btn-primary mt-4" type="submit" @onclick="StartTender">Bắt đầu đấu thầu &gt;</button>
+        </div>
+    </div>
+
+</div>
+@code {
+    [Parameter]
+    public DinoTrans.Shared.Entities.Tender? NewTender { get; set; } = null;
+    public string TenderStartTime = "";
+    public string TenderEndTime = "";
+    public string TenderPickUpDate = "";
+    public string TenderDeliveryDate = "";
+    [Parameter]
+    public EventCallback<int> FinishStep { get; set; }
+    [Parameter]
+    public EventCallback<TenderBackStep2DTO> TenderStep2 { get; set; }
+    public class DocsDisplay
+    {
+        public string Document = "";
+        public string DocumentName = "";
+    }
+    public List<DocsDisplay> docs = new List<DocsDisplay>();
+    public List<ContructionMachine> ConstructionMachines { get; set; } = new();
+    protected override async Task OnInitializedAsync()
+    {
+        TenderStartTime = $"{NewTender!.StartDate.Day.ToString()}.{NewTender.StartDate.Month.ToString()}.{NewTender.StartDate.Year.ToString()}, {NewTender!.StartDate.Hour.ToString()}h:{NewTender!.StartDate.Minute.ToString()}p";
+        TenderEndTime = $"{NewTender!.EndDate.Day.ToString()}.{NewTender.EndDate.Month.ToString()}.{NewTender.EndDate.Year.ToString()}, {NewTender!.EndDate.Hour.ToString()}h:{NewTender!.EndDate.Minute.ToString()}p";
+        TenderPickUpDate = $"{NewTender!.PickUpDate!.Value.Day.ToString()}.{NewTender!.PickUpDate!.Value.Month.ToString()}.{NewTender!.PickUpDate!.Value.Year.ToString()}, {NewTender!.PickUpDate!.Value.Hour.ToString()}h:{NewTender!.PickUpDate!.Value.Minute.ToString()}p";
+        TenderDeliveryDate = $"{NewTender!.DeiliverDate!.Value.Day.ToString()}.{NewTender!.DeiliverDate!.Value.Month.ToString()}.{NewTender!.DeiliverDate!.Value.Year.ToString()}, {NewTender!.DeiliverDate!.Value.Hour.ToString()}h:{NewTender!.DeiliverDate!.Value.Minute.ToString()}p";
+        foreach(var item in NewTender.DocumentDeserializeJson)
+        {
+            foreach (KeyValuePair<string, string> pair in item)
+            {
+                var document = Uri.EscapeDataString(pair.Value);
+                var test = $"\\TenderDocuments\\Tender_{NewTender.Id}\\";
+                var documentsName = pair.Value.ToString().Replace(test,"");
+                docs.Add(new DocsDisplay
+                {
+                    Document = document,
+                    DocumentName = documentsName.Replace(test, "")
+                });
+            }
+        }
+        var result = await ConstructionMachineService.GetMachinesForTenderOverviewByIds(NewTender!.Id);
+        if(result.Success)
+        {
+            ConstructionMachines = result.Data;
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+
+    public async Task StartTender()
+    {
+        var result = await TenderService.StartTender(NewTender!.Id);
+        if(result.Success)
+        {
+            await FinishStep.InvokeAsync(3);
+        }else
+        {
+            await js.InvokeVoidAsync("alert",result.Message);
+        }
+    }
+
+    public async Task BackToStep2() => await TenderStep2.InvokeAsync(new TenderBackStep2DTO
+    {
+        CurrentStep = 1,
+        InputStep2 = new ConvertStep2
+        {
+            PickUpDate = DateOnly.FromDateTime(NewTender!.PickUpDate!.Value.Date),
+            DeliveryDate = DateOnly.FromDateTime(NewTender!.DeiliverDate!.Value.Date),
+            PickUpTime = new TimeOnly(NewTender!.PickUpDate.Value.Hour, NewTender!.PickUpDate.Value.Minute),
+            DeliveryTime = new TimeOnly(NewTender!.DeiliverDate.Value.Hour, NewTender!.DeiliverDate.Value.Minute),
+            PickUpAddress = NewTender!.PickUpAddress!,
+            DeliveryAddress = NewTender!.DeliveryAddress!,
+            ContactAtPickUpAddress = NewTender!.PickUpContact!,
+            ContactAtDeliveryAddress = NewTender!.DeliveryContact!,
+            Notes = NewTender!.Notes!,
+            TenderId = NewTender!.Id,
+            ConstructionMachineIds = ConstructionMachines.Select(c => c.Id).ToList(),
+            Documentations = NewTender.Documentations,
+        },
+        IsReturnFromStep3 = true
+    });
+}

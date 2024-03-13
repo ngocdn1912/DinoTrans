@@ -1,0 +1,188 @@
+﻿@inject ITenderService TenderService
+@inject AuthenticationStateProvider AuthenticationState
+@inject IUserService UserService
+@inject IJSRuntime js
+@inject NavigationManager navManager
+
+<div class="card-body">
+    <EditForm Model="tender_1">
+        @*         <header><b>1. Thời gian đấu thầu</b></header>
+        <hr />
+        *@        <div class="column">
+            <div class="form-group col-md-12">
+                <label class="form-label">
+                    Tên thầu *
+                </label>
+                <input type="text" @bind="tender_1.TenderName" class="form-control" placeholder="Nhập vào tên thầu" />
+            </div>
+
+            <div class="form-group col-md-12">
+                <div class="row">
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label">
+                            Ngày bắt đầu đấu thầu *
+                        </label>
+                        <input type="date" @bind="tender_1.TenderStartDate" class="form-control" />
+                        @if (ErrorStartDate != null)
+                        {
+                            <div style="color:red">@ErrorStartDate</div>
+                        }
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label">
+                            Ngày kết thúc đấu thầu *
+                        </label>
+                        <input type="date" @bind="tender_1.TenderEndDate" class="form-control" />
+                        @if (ErrorStartDate != null)
+                        {
+                            <div style="color:red">@ErrorEndDate</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group col-md-12">
+                <div class="row">
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label">
+                            Giờ bắt đầu đấu thầu *
+                        </label>
+                        <input type="time" @bind="tender_1.TenderStartTime" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label">
+                            Giờ kết thúc đấu thầu *
+                        </label>
+                        <input type="time" @bind="tender_1.TenderEndTime" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class="form-group row float-end">
+            @*             @if (!IsBusy || IsError)
+            {
+            *@                <div class="d-flex">
+                <button class="btn btn-primary mt-3 me-2" @onclick=Cancel>Hủy</button>
+                <button class="btn btn-primary mt-3" style="min-width:fit-content" @onclick=HandleNextStep type="submit">Bước tiếp theo</button>
+            </div>
+            @*             }
+            else
+            {
+            <button class="btn btn-primary mt-3" disabled>
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span role="status">Đang tải...</span>
+            </button>
+            }
+            *@
+        </div>
+    </EditForm>
+</div>
+
+@code {
+
+    [Parameter]
+    public int CompanyId { get; set; }
+    public ConvertStep1 tender_1 = new ConvertStep1
+        {
+            TenderName = "",
+            TenderStartDate = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
+            TenderEndDate = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day),
+            TenderStartTime = new TimeOnly(DateTime.Now.Hour, DateTime.Now.Minute),
+            TenderEndTime = new TimeOnly(DateTime.Now.Hour + 1, DateTime.Now.Minute),
+        };
+    [Parameter]
+    public EventCallback<TenderChangeStepDTO> OnStepChange { get; set; }
+    public DinoTrans.Shared.Entities.Tender newTender { get; set; } = new();
+    public int selectedStepIndex = 0;
+    public AuthenticationState? authState = null;
+    private ResponseModel<CompanyRoleEnum> response = new();
+    private CompanyRoleEnum companyRole = new();
+    public string? ErrorStartDate { get; set; } = null;
+    public string? ErrorEndDate { get; set; } = null;
+    public bool IsError { get; set; }
+    public bool IsBusy = false;
+    public void Cancel()
+    {
+        navManager.NavigateTo("/", forceLoad: true);
+    }
+    private async Task HandleNextStep()
+    {
+        IsBusy = true;
+        ErrorStartDate = null;
+        ErrorEndDate = null;
+        DateTime startDate = DateTime.Parse($"{tender_1.TenderStartDate} {tender_1.TenderStartTime}");
+        DateTime endDate = DateTime.Parse($"{tender_1.TenderEndDate} {tender_1.TenderEndTime}");
+        string tenderName = tender_1.TenderName;
+        var minutes = TimeSpan.FromMinutes(5);
+        if (startDate < DateTime.Now - minutes)
+        {
+            ErrorStartDate = "Thời gian bắt đầu phải sau thời gian hiện tại";
+            IsError = true;
+        }
+        if (endDate < DateTime.Now - minutes)
+        {
+            ErrorEndDate = "Thời gian kết thúc phải sau thời gian hiện tại";
+            IsError = true;
+        }
+        if (startDate > endDate)
+        {
+            ErrorStartDate = "Thời gian bắt đầu phải trước thời gian kết thúc";
+            ErrorEndDate = "Thời gian kết thúc phải sau thời gian bắt đầu";
+            IsError = true;
+        }
+        if (IsError)
+        {
+            IsError = false;
+            return;
+        }
+        var result = await TenderService.CreateTenderStep1(new CreateTenderStep1DTO
+            {
+                CompanyShipperId = CompanyId,
+                TenderName = tenderName,
+                TenderStartDate = startDate,
+                TenderEndDate = endDate
+            });
+        if (result.Success)
+        {
+            if (selectedStepIndex < 2)
+            {
+                selectedStepIndex++;
+                var resultContent = result.Data;
+                await OnStepChange.InvokeAsync(new TenderChangeStepDTO
+                    {
+                        CurrentStep = selectedStepIndex,
+                        Tender = new Shared.Entities.Tender
+                        {
+                            Id = resultContent.Id,
+                            TenderStatus = resultContent.TenderStatus,
+                            Name = resultContent.Name,
+                            CompanyShipperId = resultContent.CompanyShipperId,
+                            CompanyCarrierId = resultContent.CompanyCarrierId,
+                            StartDate = resultContent.StartDate,
+                            EndDate = resultContent.EndDate,
+                            FinalPrice = resultContent.FinalPrice,
+                            IsCarrierComfirm = resultContent.IsCarrierComfirm,
+                            IsShipperComfirm = resultContent.IsShipperComfirm,
+                            PickUpDate = resultContent.PickUpDate,
+                            DeiliverDate = resultContent.DeiliverDate,
+                            PickUpAddress = resultContent.PickUpAddress,
+                            PickUpContact = resultContent.PickUpContact,
+                            DeliveryAddress = resultContent.DeliveryAddress,
+                            DeliveryContact = resultContent.DeliveryContact,
+                            Notes = resultContent.Notes,
+                            Documentations = resultContent.Documentations
+
+                        }
+                    });
+            }
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+}
+

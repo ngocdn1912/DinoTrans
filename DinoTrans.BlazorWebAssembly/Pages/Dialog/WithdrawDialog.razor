@@ -1,0 +1,67 @@
+﻿@inject IJSRuntime js
+@inject ITenderService TenderService
+<button style="border:none" @onclick="OpenDialog">
+    <img class="img-active-tenders" src="/images/BackArrow.png" alt="Back Arrow">
+</button>
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:600px; min-height:500px" id="withdraw-dialog-@TenderId">
+    <div class="card">
+        <div class="card-header text-center">
+            <img src="/images/BackArrow.png" style="min-width:50px;min-height:50px;max-width:100px;max-height:100px;">
+            <div>Hủy thầu vận tải</div>
+        </div>
+        <div class="card-body text-center">
+            <div>Lý do hủy thầu</div>
+            <textarea style="min-height:200px;width:100%;padding:5px" placeholder="Nhập lý do hủy..." @bind="withdrawTenderDTO.WithdrawReason"></textarea>
+        </div>
+        <div class="card-footer row">
+            <div class="form-group col-md-6">
+                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Hủy</button>
+            </div>
+            <div class="form-group col-md-6">
+                <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="Withdraw">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</dialog>
+@code {
+    [Parameter]
+    public int TenderId { get; set; }
+    public WithdrawTenderDTO withdrawTenderDTO { get; set; }
+    [Parameter]
+    public EventCallback ChangeData { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        withdrawTenderDTO = new WithdrawTenderDTO
+        {
+            TenderID = TenderId,
+            WithdrawReason = "",
+        };
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        withdrawTenderDTO.TenderID = TenderId;
+    }
+    public async Task OpenDialog()
+    {
+        await js.InvokeVoidAsync("OpenDialog", $"withdraw-dialog-{TenderId}");
+    }
+
+    async void Close()
+    {
+        withdrawTenderDTO.TenderID = 0;
+        withdrawTenderDTO.WithdrawReason = "";
+        await js.InvokeVoidAsync("CloseDialog", $"withdraw-dialog-{TenderId}");
+    }
+
+    public async Task Withdraw()
+    {
+        var result = await TenderService.UpdateWithdrawTender(withdrawTenderDTO);
+        if (result.Flag)
+        {
+            await ChangeData.InvokeAsync();
+            Close();
+        }
+        else
+            await js.InvokeVoidAsync("alert", result.Message);
+    }
+}

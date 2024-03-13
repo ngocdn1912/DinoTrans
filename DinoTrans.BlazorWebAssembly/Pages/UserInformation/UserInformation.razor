@@ -1,0 +1,87 @@
+﻿@page "/UserInformation/UserId={myUserId:int}&CompanyId={myCompanyId:int}"
+<h3>UserInformation</h3>
+@inject IUserService UserService
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    User Information
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">First Name</dt>
+                        <dd class="col-sm-8">@userInfo.FirstName</dd>
+
+                        <dt class="col-sm-4">Last Name</dt>
+                        <dd class="col-sm-8">@userInfo.LastName</dd>
+
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@userInfo.Email</dd>
+
+                        <dt class="col-sm-4">Phone Number</dt>
+                        <dd class="col-sm-8">@userInfo.PhoneNumber</dd>
+
+                        <dt class="col-sm-4">Address</dt>
+                        <dd class="col-sm-8">@userInfo.Address</dd>
+
+                        <dt class="col-sm-4">Role</dt>
+                        <dd class="col-sm-8">@userInfo.Role</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Company Information
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Company Name</dt>
+                        <dd class="col-sm-8">@company.CompanyName</dd>
+
+                        <dt class="col-sm-4">Company Email</dt>
+                        <dd class="col-sm-8">@company.CompanyEmail</dd>
+
+                        <dt class="col-sm-4">Company Phone Number</dt>
+                        <dd class="col-sm-8">@company.CompanyPhoneNumber</dd>
+
+                        <dt class="col-sm-4">Company Role</dt>
+                        <dd class="col-sm-8">@company.CompanyRoleName</dd>
+
+                        <dt class="col-sm-4">Company Address</dt>
+                        <dd class="col-sm-8">@company.CompanyAddress</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int myUserId { get; set; }
+    [Parameter]
+    public int myCompanyId { get; set; }
+    private UserInfo userInfo = new();
+    private CompanyInfo company = new();
+    bool sidebarExpanded = false;
+    //OnInitializedAsync là hàm khởi tạo khi chưa có bất cứ thứ gì được tạo ra
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await UserService.GetAllUserInfo(new GetAllUserInfoDTO
+        {
+            UserId = myUserId,
+            CompanyId = myCompanyId
+        });
+        if(response.Success)
+        {
+            userInfo = response.Data.UserInfo;
+            company = response.Data.Company;
+        }
+    }
+}

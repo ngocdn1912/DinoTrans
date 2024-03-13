@@ -1,0 +1,68 @@
+﻿@page "/tender/CompanyId={CompanyId:int}"
+@inject ITenderService TenderService
+@inject AuthenticationStateProvider AuthenticationState
+@inject IUserService UserService
+@inject IJSRuntime js
+<PageTitle>Tender Wizard</PageTitle>
+<div class="card">
+    @if(selectedStepIndex != 3)
+    {
+        <div class="card-header p-4">
+            <Tender4steps SelectedStepIndex="selectedStepIndex"></Tender4steps>
+        </div>
+    }
+    @if (selectedStepIndex == 0)
+    {
+        <TenderStep1 CompanyId="CompanyId" OnStepChange="OnStepChange"></TenderStep1>
+    }
+    @if (selectedStepIndex == 1)
+    {
+        <TenderStep2 CompanyId="CompanyId" NewTender="newTender" OnStep2Change="OnStepChange" InputStep2="InputStep2" MachineIdsStep2="SelectedConstructionMachineIds" IsReturnFromStep3="IsReturnFromStep3" selectedFiles="InputFiles"></TenderStep2>
+    }
+    else if (selectedStepIndex == 2)
+    {
+        <TenderStep3 NewTender="newTender" FinishStep="FinishStep" TenderStep2="BackStep2"></TenderStep3>
+    }
+    else if(selectedStepIndex == 3)
+    {
+        <div>Đến trang chi tiết đấu thầu để xem đấu thầu đang mở</div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int CompanyId { get; set; }
+    public int selectedStepIndex { get; set; }
+    public DinoTrans.Shared.Entities.Tender? newTender { get; set; } = null;
+    public List<int> SelectedConstructionMachineIds = new();
+    public ConvertStep2 InputStep2 { get; set; } = new();
+    public List<InputFileData> InputFileDatas = new();
+    public string Documents { get; set; }
+    public bool IsReturnFromStep3 = false;
+    public List<InputFileData> InputFiles { get; set; } = new();
+    private void OnStepChange(TenderChangeStepDTO tender)
+    {
+        newTender = tender.Tender;
+        var endDateString = newTender!.EndDate.ToString("yyyy-MM-dd");
+        DateOnly enddateOnly = DateOnly.Parse(endDateString);
+        InputStep2.PickUpDate = enddateOnly.AddDays(1);
+        InputStep2.DeliveryDate = enddateOnly.AddDays(1);
+        InputStep2.PickUpTime = new();
+        InputStep2.DeliveryTime = InputStep2.PickUpTime.AddHours(1);
+        SelectedConstructionMachineIds = tender.ConstructionMachineIds;
+        selectedStepIndex = tender.CurrentStep;
+        InputStep2.Documentations = tender!.Tender!.Documentations;
+    }
+
+    private void FinishStep(int CurrentStep)
+    {
+        selectedStepIndex = CurrentStep;
+    }
+
+    private void BackStep2(TenderBackStep2DTO dto)
+    {
+        selectedStepIndex = dto.CurrentStep;
+        InputStep2 = dto.InputStep2;
+        IsReturnFromStep3 = dto.IsReturnFromStep3;
+    }
+}

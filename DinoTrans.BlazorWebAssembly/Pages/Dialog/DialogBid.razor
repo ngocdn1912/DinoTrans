@@ -1,0 +1,149 @@
+﻿@inject IJSRuntime js
+@inject ITenderBidService TenderBidService
+
+<button style="border:none" @onclick="OpenDialog" class="button-offers">
+    <img class="img-active-tenders" src="/images/hammerBid.png" alt="Hammer">
+</button>
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:700px; min-height:370px" id="make-offer-@TenderId">
+    <div class="card">
+        <div class="card-header text-center">
+            <img src="/images/hammerBid.png" style="min-width:50px;min-height:50px;max-width:100px;max-height:100px;">
+            <div>Đề xuất giá vận tải</div>
+        </div>
+        <div class="card-body text-center row col-md-12">
+            <div class="col-md-8" style="padding:5px;border:1px solid black">
+                <div>Lưu ý rằng đề xuất giá vận tải đã bao gồm</div>
+                <div>- Chi phí vận chuyển</div>
+                <div>- Giấy phép vận chuyển</div>
+                <div>- Phụ phí xăng dầu</div>
+            </div>
+            <div class="col-md-4">
+                <div>Giá vận tải (VNĐ)</div>
+                <div><input type="text" placeholder="Nhập giá vận chuyển" value="@PriceDisplay" @oninput="ChangeValue" /></div>
+            </div>
+
+        </div>
+        <div class="card-footer row fixed-bottom">
+            <div class="form-group col-md-6">
+                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Hủy</button>
+            </div>
+            <div class="form-group col-md-6">
+                @if (!AnyBids)
+                {
+                    <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="Bid">Đặt giá</button>
+                }else
+                {
+                    <div class="float-end">
+                        <ConfirmDeleteBid TenderBidId="existedTenderBid.Id" Finish="FinishDeleteBid"></ConfirmDeleteBid>
+                        <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="UpdateBid">Cập nhật</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</dialog>
+@code {
+    [Parameter]
+    public int TenderId { get; set; }
+    public TenderBidDTO newTenderBid { get; set; } = new();
+    [Parameter]
+    public EventCallback<ActionTenderBid> ChangeData { get; set; }
+    public ApplicationUser _applicationUser;
+    public string PriceDisplay = "";
+    public bool IsPriceSet = false;
+    public bool AnyBids = false;
+    public TenderBid TBid = new();
+    public TenderBid existedTenderBid = new TenderBid();
+    [Parameter]
+    public int CompanyId { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var tenderBids = await TenderBidService.GetTenderBidsByTenderId(TenderId);
+        if(tenderBids.Success)
+        {
+            TBid = tenderBids.Data.Where(tb => tb.CompanyCarrierId == CompanyId).FirstOrDefault();
+            if (TBid != null)
+            {
+                PriceDisplay = TBid.TransportPrice.ToString("N0");
+                AnyBids = true;
+                existedTenderBid = TBid;
+            }
+        }
+    }
+    public async Task OpenDialog()
+    {
+        newTenderBid.TenderId = TenderId;
+        await js.InvokeVoidAsync("OpenDialog", $"make-offer-{TenderId}");
+    }
+    public void ChangeValue(ChangeEventArgs e)
+    {
+        if (float.TryParse(e.Value.ToString(), out float transportPrice))
+        {
+            if (!AnyBids)
+            {
+                newTenderBid.TransportPrice = transportPrice;
+                PriceDisplay = newTenderBid.TransportPrice.ToString("N0");
+            }
+            else 
+            {
+                existedTenderBid.TransportPrice = transportPrice;
+                PriceDisplay = existedTenderBid.TransportPrice.ToString("N0");
+            }
+            IsPriceSet = true;
+        }
+        else IsPriceSet = false;
+    }
+    async void UpdateBid()
+    {
+        var result = await TenderBidService.UpdateTenderBid(new UpdateTenderBidDTO
+        {
+            TenderBidId = existedTenderBid.Id,
+            TransportPrice = existedTenderBid.TransportPrice
+        });
+        if (result.Success)
+        {
+            Close();
+            await ChangeData.InvokeAsync(new ActionTenderBid
+                {
+                    TenderBid = result.Data,
+                    ActionType = TenderActionType.Update
+                });
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+    async void Close()
+    {
+        newTenderBid = new();
+        await js.InvokeVoidAsync("CloseDialog", $"make-offer-{TenderId}");
+    }
+
+    public async Task Bid()
+    {
+        if (!IsPriceSet)
+            await js.InvokeVoidAsync("alert", "Vui lòng nhập đúng số tiền");
+        var result = await TenderBidService.SubmitTenderBid(newTenderBid, _applicationUser);
+        if (result.Success)
+        {
+            Close();
+            await ChangeData.InvokeAsync(new ActionTenderBid
+            {
+                TenderBid = result.Data,
+                ActionType = TenderActionType.Add
+            });
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+
+    public async Task FinishDeleteBid(ActionTenderBid bid)
+    {
+        Close();
+        await ChangeData.InvokeAsync(bid);
+    }
+}

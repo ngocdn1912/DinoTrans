@@ -1,0 +1,457 @@
+﻿@inject IConstructionMachineService ConstructionMachineService
+@inject IJSRuntime js
+@inject HttpClient Http
+@inject ITenderService TenderService
+@inject NavigationManager navManager
+
+
+<div class="card-body">
+    <EditForm Model="InputStep2">
+        @*         <header><b>2. Máy xây dựng và thông tin chi tiết</b></header>
+        <hr />
+        *@        <div class="column">
+            @* Thời gian nhận hàng và thời gian giao hàng *@
+            <div class="col-md-12 row me-0">
+                <div class="form-group col-md-6 column">
+                    <header>Thời gian nhận hàng</header>
+                    <hr />
+                    <div class="col-md-12">
+                        <label class="form-label">
+                            Ngày nhận  hàng*
+                        </label>
+                        <input type="date" @bind="InputStep2.PickUpDate" class="form-control" @oninput="UpdatePickUpDate" />
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label">
+                            Giờ nhận  hàng*
+                        </label>
+                        <input type="time" @bind="InputStep2.PickUpTime" class="form-control" @oninput="UpdatePickUpTime" />
+                    </div>
+                </div>
+                <div class="form-group col-md-6 column pe-0">
+                    <header>Thời gian giao hàng</header>
+                    <hr />
+                    <div class="col-md-12">
+                        <label class="form-label">
+                            Ngày giao hàng*
+                        </label>
+                        <input type="date" @bind="InputStep2.DeliveryDate" class="form-control" @oninput="UpdateDeliveryDate" />
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label">
+                            Giờ giao hàng *
+                        </label>
+                        <input type="time" @bind="InputStep2.DeliveryTime" class="form-control" @oninput="UpdateDeliveryTime" />
+                    </div>
+                </div>
+            </div>
+            @*  Máy cần vận chuyển *@
+            <div class="col-md-12 mt-5">
+                <header>Thông tin máy xây dựng</header>
+                <hr />
+                <div class="col-md-12 row mt-1 mb-2">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" value="@searchText"
+                               @onchange="@((ChangeEventArgs e) => ChangeText(e))"
+                               placeholder="Tìm kiếm máy xây dựng..." />
+
+                    </div>
+                    <div class="col-md-2"></div>
+                    <div class="col-md-2 p-0">
+                        <NewConstructionMachineDialog IsDefaultEvent=IsDefaultEvent CallDefaultEvent=HandleDefaultEvent addedmachine="recallAPI" CompanyId="CompanyId"></NewConstructionMachineDialog>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <ConstructionMachineList ListConstructionMachineIdsReturn="HandleChooseMachines" constructionMachinesListChooses="contructionMachinesChoose" ListConstructionMachineIds="MachineIdsStep2"></ConstructionMachineList>
+                    <div class="float-end">
+                        <Pagination ActivePageNumber="@currentPageNumber"
+                                    TotalPages="TotalPage"
+                                    DisplayPages="2"
+                                    FirstLinkIcon="IconName.ChevronDoubleLeft"
+                                    PreviousLinkIcon="IconName.ChevronLeft"
+                                    NextLinkIcon="IconName.ChevronRight"
+                                    LastLinkIcon="IconName.ChevronDoubleRight"
+                                    PageChanged="OnPageChangedAsync" />
+                    </div>
+                </div>
+            </div>
+            @*Địa chỉ và liên lạc nhận hàng và giao hàng*@
+            <div class="col-md-12 row">
+                <div class="form-group col-md-6 column">
+                    <header>Thông tin nhận hàng</header>
+                    <hr />
+                    <div class="col-md-12">
+                        <label class="form-label">
+                            Địa chỉ nhận hàng *
+                        </label>
+                        <input type="text" @bind="InputStep2.PickUpAddress" class="form-control" placeholder="Nhập tên đường, số nhà, quận huyện,..." />
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label">
+                            Liên hệ nhận hàng *
+                        </label>
+                        <input type="text" @bind="InputStep2.ContactAtPickUpAddress" class="form-control" placeholder="Tên người liên hệ, số điện thoại,..." />
+                    </div>
+                </div>
+                <div class="form-group col-md-6 column pe-0">
+                    <header>Thông tin giao hàng</header>
+                    <hr />
+                    <div class="col-md-12">
+                        <label class="form-label">
+                            Địa chỉ giao hàng *
+                        </label>
+                        <input type="text" @bind="InputStep2.DeliveryAddress" class="form-control" placeholder="Nhập tên đường, số nhà, quận huyện,..." />
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label">
+                            Liên hệ giao hàng *
+                        </label>
+                        <input type="text" @bind="InputStep2.ContactAtDeliveryAddress" class="form-control" placeholder="Tên người liên hệ, số điện thoại,..." />
+                    </div>
+                </div>
+            </div>
+
+            @*Ghi chú và tài liệu*@
+            <div class="col-md-12 row mt-5">
+                <header>Mô tả và tài liệu đính kèm</header>
+                <hr />
+                <div class="col-md-6">
+                    <label class="form-label">
+                        Mô tả *
+                    </label>
+                    <textarea type="text" @bind="InputStep2.Notes" class="form-control" />
+                    @* @if (ErrorStartDate != null)
+                    {
+                    <div style="color:red">@ErrorStartDate</div>
+                    } *@
+                </div>
+
+                <div class="col-md-6 pe-0">
+                    <span>
+                        <label class="form-label">
+                            Tài liệu đính kèm *
+                        </label>
+                        @if (!IsReturnFromStep3)
+                        {
+                            <label class="btn btn-outline-success float-end" style="position: relative; overflow: hidden;">
+
+
+                                <span>+ Thêm tài liệu</span>
+                                <InputFile id="fileInput" OnChange="@HandleFileSelection" multiple style="opacity: 0; width: 150px; height: 150px; position: absolute; top: 0; left: 0; cursor: pointer; z-index: 2;" />
+
+                            </label>
+                        }
+                    </span>
+                    <div class="mt-3">
+                        @if (selectedFiles != null && selectedFiles.Count > 0)
+                        {
+                            @foreach (var file in selectedFiles)
+                            {//if nhận được là từ step 3 thì mới hiển thị để click, không thì thôi.
+                             //vẫn phải add được vào loadFiles
+                <tr>
+                    <img src="/images/PDF_file_icon.svg.png" style="max-width:20px; max-height:20px;" class="me-2" />
+                    <td style="padding-right:5px;">@file.Name</td>
+                    <td>
+                                        @if (!IsReturnFromStep3)
+                                        {
+                            <button class="btn btn-outline-danger" @onclick="() => RemoveDocument(file)">- Xóa</button>
+                                        }
+                    </td>
+                </tr>
+                            }
+                        }
+</div>
+                    </div>
+             </div>
+        </div>
+
+<hr />
+<div class="form-group row float-end">
+    <div class="d-flex">
+        <button class="btn btn-primary mt-3 me-2" @onclick=Cancel>Hủy</button>
+
+        <button class="btn btn-primary mt-3" style="min-width:fit-content" type="submit" @onclick="OnHandleSubmit">Bước tiếp theo</button>
+    </div>
+</div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public DinoTrans.Shared.Entities.Tender? NewTender { get; set; } = null;
+    [Parameter]
+    public int CompanyId { get; set; }
+    [Parameter]
+    public ConvertStep2 InputStep2 { get; set; } = new();
+    [Parameter]
+    public bool IsReturnFromStep3 { get; set; }
+    public SearchLoadForTenderDTO searchLoadForTenderDTO = new();
+    public List<ContructionMachine> contructionMachines = new();
+    public List<ConstructionMachinesListChoose> contructionMachinesChoose = new();
+    public List<IBrowserFile> loadedFiles = new List<IBrowserFile>();
+    [Parameter]
+    public List<int> MachineIdsStep2 { get; set; } = new();
+    public int TotalPage { get; set; }
+    public int currentPageNumber = 1;
+    public string searchText { get; set; } = "";
+    public bool IsDefaultEvent { get; set; } = false;
+    public string ErrorDisplay = "";
+    [Parameter]
+    public List<InputFileData> selectedFiles { get; set; } = new List<InputFileData>();
+    private long maxFileSize = 1024 * 1024 * 3;
+    private List<string> MyDocuments { get; set; } = new();
+    [Parameter]
+    public EventCallback<TenderStep2To3> OnStep2Change { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SearchOnInputChange();
+    }
+
+    private void HandleChooseMachines(List<int> MachineIds)
+    {
+        MachineIdsStep2 = MachineIds;
+    }
+
+    public async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        if (selectedFiles == null) selectedFiles = new();
+        foreach (var file in e.GetMultipleFiles())
+        {
+            var buffer = new byte[file.Size];
+            selectedFiles.Add(new InputFileData { Name = file.Name, Data = buffer });
+            loadedFiles.Add(file);
+        }
+        StateHasChanged();
+    }
+
+    public void RemoveDocument(InputFileData input)
+    {
+        selectedFiles.Remove(input);
+        var loadedFileToRemove = loadedFiles.FirstOrDefault(f => f.Name == input.Name);
+        if (loadedFileToRemove != null)
+        {
+            loadedFiles.Remove(loadedFileToRemove);
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnHandleSubmit()
+    {
+        if (MachineIdsStep2 == null || MachineIdsStep2.Count == 0)
+        {
+            ErrorDisplay = "Please choose construction machine";
+            await js.InvokeVoidAsync("alert", ErrorDisplay);
+            return;
+        }
+
+        var result = new ResponseModel<Shared.Entities.Tender>();
+        var newUploadResults = new List<UploadResult>();
+        if (selectedFiles != null && selectedFiles.Count > 0 && loadedFiles.Count > 0)
+        {
+            try
+            {
+                using var content = new MultipartFormDataContent();
+                foreach (var file in loadedFiles)
+                {
+                    var fileContent = new StreamContent(file.OpenReadStream(maxFileSize));
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    MyDocuments.Add(file.Name.Replace(" ", ""));
+                    content.Add(
+                        content: fileContent,
+                        name: "\"files\"",
+                        fileName: file.Name);
+                }
+                var response = await Http.PostAsync($"/api/File/UploadTenderDocuments?TenderId={NewTender!.Id}", content);
+                newUploadResults = await response.Content.ReadFromJsonAsync<List<UploadResult>>();
+
+            }
+            catch (Exception ex)
+            {
+                await js.InvokeVoidAsync("alert", ex.Message);
+                return;
+            }
+        }
+
+        var tenderStep2 = new UpdateTenderStep2AndCreateTenderContructionMachineDTO();
+        tenderStep2.TenderId = NewTender!.Id;
+        tenderStep2.PickUpDateAndTime = DateTime.Parse($"{InputStep2.PickUpDate} {InputStep2.PickUpTime}");
+        tenderStep2.DeliveryDateAndTime = DateTime.Parse($"{InputStep2.DeliveryDate} {InputStep2.DeliveryTime}");
+        tenderStep2.ContactAtDeliveryAddress = InputStep2.ContactAtDeliveryAddress;
+        tenderStep2.ContactAtPickUpAddress = InputStep2.ContactAtPickUpAddress;
+        tenderStep2.ConstructionMachineIds = MachineIdsStep2;
+        tenderStep2.PickUpAddress = InputStep2.PickUpAddress;
+        tenderStep2.DeliveryAddress = InputStep2.DeliveryAddress;
+        tenderStep2.Notes = InputStep2.Notes;
+        if (newUploadResults!.Count != 0)
+            tenderStep2.Documentations = newUploadResults.Select(u => u.FilePath).ToList();
+        result = await TenderService.CreateTenderStep2(tenderStep2);
+        if (result.Success)
+        {
+            var tender = result.Data;
+            await OnStep2Change.InvokeAsync(new TenderStep2To3
+                {
+                    CurrentStep = 2,
+                    Tender = new Shared.Entities.Tender
+                    {
+                        Id = tender.Id,
+                        TenderStatus = tender.TenderStatus,
+                        Name = tender.Name,
+                        CompanyShipperId = tender.CompanyShipperId,
+                        CompanyCarrierId = tender.CompanyCarrierId,
+                        StartDate = tender.StartDate,
+                        EndDate = tender.EndDate,
+                        FinalPrice = tender.FinalPrice,
+                        IsCarrierComfirm = tender.IsCarrierComfirm,
+                        IsShipperComfirm = tender.IsShipperComfirm,
+                        PickUpDate = tender.PickUpDate,
+                        DeiliverDate = tender.DeiliverDate,
+                        PickUpAddress = tender.PickUpAddress,
+                        PickUpContact = tender.PickUpContact,
+                        DeliveryAddress = tender.DeliveryAddress,
+                        DeliveryContact = tender.DeliveryContact,
+                        Notes = tender.Notes,
+                        Documentations = tender.Documentations
+                    },
+                    ConstructionMachineIds = MachineIdsStep2,
+                    InputFileData = selectedFiles
+                });
+        }
+    }
+
+    private async Task UpdateDeliveryDate(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value.ToString(), out DateOnly result))
+        {
+            InputStep2.DeliveryDate = result;
+            await SearchOnInputChange();
+        }
+    }
+
+    private async Task UpdatePickUpDate(ChangeEventArgs e)
+    {
+        if (DateOnly.TryParse(e.Value.ToString(), out DateOnly result))
+        {
+            InputStep2.PickUpDate = result;
+            await SearchOnInputChange();
+        }
+    }
+
+    private async Task UpdatePickUpTime(ChangeEventArgs e)
+    {
+        if (TimeOnly.TryParse(e.Value.ToString(), out TimeOnly result))
+        {
+            InputStep2.PickUpTime = result;
+            await SearchOnInputChange();
+        }
+    }
+
+    private async Task UpdateDeliveryTime(ChangeEventArgs e)
+    {
+        if (TimeOnly.TryParse(e.Value.ToString(), out TimeOnly result))
+        {
+            InputStep2.DeliveryTime = result;
+            await SearchOnInputChange();
+        }
+    }
+
+    private async Task SearchOnInputChange()
+    {
+        try
+        {
+            DateTime startDate = DateTime.Parse($"{InputStep2.PickUpDate} {InputStep2.PickUpTime}");
+            DateTime endDate = DateTime.Parse($"{InputStep2.DeliveryDate} {InputStep2.DeliveryTime}");
+            searchLoadForTenderDTO = new SearchLoadForTenderDTO
+                {
+                    pageIndex = currentPageNumber,
+                    pageSize = 5,
+                    SearchText = searchText,
+                    TenderId = NewTender!.Id,
+                    PickUpDate = startDate,
+                    DeliveryDate = endDate
+                };
+            var response = await ConstructionMachineService.SearchConstructionMachineForTender(searchLoadForTenderDTO);
+            if (response.Success)
+            {
+                contructionMachines = response.Data.contructionMachines;
+                contructionMachinesChoose = new();
+                foreach (var item in contructionMachines)
+                {
+                    contructionMachinesChoose.Add(new ConstructionMachinesListChoose
+                        {
+                            Id = item.Id,
+                            Name = item.Name,
+                            Brand = item.Brand,
+                            SerialNumber = item.SerialNumber,
+                            CompanyShipperId = item.CompanyShipperId,
+                            Image = item.Image,
+                            Length = item.Length,
+                            Width = item.Width,
+                            Height = item.Height,
+                            Weight = item.Weight
+                        });
+                }
+                TotalPage = response.Data.TotalPage;
+            }
+            SetSelectedMachines();
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private void SetSelectedMachines()
+    {
+        if (MachineIdsStep2 != null && MachineIdsStep2.Count != 0)
+        {
+            foreach (var item in contructionMachinesChoose)
+            {
+                if (MachineIdsStep2.Contains(item.Id))
+                {
+                    item.IsSelected = true;
+                    item.ButtonText = "- Remove Construction Machine";
+                    item.ButtonStyle = "btn-outline-danger";
+                    item.ButtonWidth = "300px";
+                }
+                else
+                {
+                    item.IsSelected = false;
+                    item.ButtonText = "+ Add Construction Machine";
+                    item.ButtonStyle = "btn-outline-success";
+                    item.ButtonWidth = "260px";
+                }
+            };
+        }
+    }
+
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        await Task.Run(() => { currentPageNumber = newPageNumber; });
+        await SearchOnInputChange();
+    }
+
+    private async Task recallAPI()
+    {
+        await SearchOnInputChange();
+    }
+
+    private async Task ChangeText(ChangeEventArgs e)
+    {
+        IsDefaultEvent = true;
+        searchText = e?.Value.ToString();
+        await SearchOnInputChange();
+    }
+
+    public void HandleDefaultEvent(bool newStatus)
+    {
+        IsDefaultEvent = newStatus;
+    }
+    public void Cancel()
+    {
+        navManager.NavigateTo("/", forceLoad: true);
+    }
+
+}

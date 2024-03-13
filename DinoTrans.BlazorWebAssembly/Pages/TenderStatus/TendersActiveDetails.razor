@@ -1,0 +1,212 @@
+﻿@page "/Tenders/Details/{TenderId:int}"
+@inject IJSRuntime js
+@inject ITenderService TenderService
+@inject NavigationManager nav
+<div class="card">
+    <div class="card-header">
+        Tenders > <b>Tender Details</b>
+    </div>
+    <br />
+    <div class="card-body">
+        <label class="form-label">
+            Mã số và thời gian thầu
+        </label>
+        <hr />
+        <div class="col-md-12 row">
+            <div class="col-md-6">
+                <div><b>Thời gian bắt đầu</b></div>
+                <div><input type="text" disabled @bind="TenderStartTime" class="input-disabled" /></div>
+                <div><b>Số hiệu thầu</b></div>
+                <div><input type="text" disabled @bind="TenderCode" class="input-disabled" /></div>
+            </div>
+            <div class="col-md-6">
+                <div><b>Thời gian kết thúc</b></div>
+                <div><input type="text" disabled @bind="TenderEndTime" class="input-disabled" /></div>
+                <div><b>Tên thầu</b></div>
+                <div><input type="text" disabled @bind="@tenderDetailsDTO.TenderName" class="input-disabled" /></div>
+            </div>
+        </div>
+
+        <br />
+
+        <div class="col-md-12">
+            <div class="col-md-6">
+                <label class="form-label">
+                    Thông tin địa chỉ và liên hệ nơi nhận
+                </label>
+                <hr />
+                <div><b>Thời gian nhận muộn nhất</b></div>
+                <div><input type="text" disabled @bind="TenderPickUpDate" class="input-disabled" /></div>
+                <div><b>Địa chỉ nơi nhận</b></div>
+                <div><input type="text" disabled @bind="tenderDetailsDTO.PickUpAddress" class="input-disabled" /></div>
+                <div><b>Liên hệ nơi nhận</b></div>
+                <div><input type="text" disabled @bind="tenderDetailsDTO.PickUpContact" class="input-disabled" /></div>
+            </div>
+            <br />
+            <div class="col-md-6">
+                <label class="form-label">
+                    Thông tin địa chỉ và liên hệ nơi giao
+                </label>
+                <hr />
+                <div><b>Thời gian giao muộn nhất</b></div>
+                <div><input type="text" disabled @bind="TenderDeliveryDate" class="input-disabled" /></div>
+                <div><b>Địa chỉ nơi nhận</b></div>
+                <div><input type="text" disabled @bind="tenderDetailsDTO.DeliveryAddress" class="input-disabled" /></div>
+                <div><b>Liên hệ nơi nhận</b></div>
+                <div><input type="text" disabled @bind="tenderDetailsDTO.DeliveryContact" class="input-disabled" /></div>
+            </div>
+        </div>
+    </div>
+    <br />
+
+    <div class="card-body">
+        <label class="form-label">
+            Thông tin danh sách máy xây dựng
+        </label>
+        <hr />
+        @if (tenderDetailsDTO.ConstructionMachines != null && tenderDetailsDTO.ConstructionMachines.Count != 0)
+        {
+            @for (int i = 0; i < tenderDetailsDTO.ConstructionMachines.Count; i++)
+            {
+                <div><i>@($"Máy {i + 1}")</i></div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <div><b>Tên máy</b></div>
+                        <div><b>Nhãn hiệu</b></div>
+                        <div><b>Số seri</b></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div><input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].Name" class="input-disabled" /></div>
+                        <div><input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].Brand" class="input-disabled" /></div>
+                        <div><input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].SerialNumber" class="input-disabled" /></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="row">
+                            <div><b>Chiều dài (mm)</b></div>
+                            <div>
+                                <input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].Length" class="input-disabled" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div><b>Chiều rộng (mm)</b></div>
+                            <div><input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].Width" class="input-disabled" /></div>
+                        </div>
+                        @if (tenderDetailsDTO.ConstructionMachines[i].Image != null)
+                        {
+                            <div class="row">
+                                <div><b>Xem ảnh</b></div>
+                                <div>
+                                    @{
+                                        var image = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(tenderDetailsDTO.ConstructionMachines[i].Image!);
+                                    }
+                                    <ViewAllConstructionMachinePictures MachineId="@tenderDetailsDTO.ConstructionMachines[i].Id" ListImanges="image"></ViewAllConstructionMachinePictures>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        <div class="row">
+                            <div><b>Chiều cao (mm)</b></div>
+                            <div><input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].Height" class="input-disabled" /></div>
+                        </div>
+                        <div class="row">
+                            <div><b>Cân nặng (kg)</b></div>
+                            <div><input type="text" disabled @bind="tenderDetailsDTO.ConstructionMachines[i].Weight" class="input-disabled" /></div>
+                        </div>
+                    </div>
+                </div>
+                <br />
+            }         
+        }
+        <br />
+        <label class="form-label">
+            Tài liệu đính kèm
+        </label>
+        <hr />
+         <div>
+            @if (docs.Count > 0)
+            {
+                foreach (var item in docs)
+                {
+                    int indexOfUnderscore = item.DocumentName.IndexOf('_');
+
+                    if (indexOfUnderscore != -1)
+                    {
+                        // Lấy chuỗi sau dấu `_` đầu tiên
+                        string afterUnderscore = item.DocumentName.Substring(indexOfUnderscore + 1);
+                        <div>
+                            <img src="/images/PDF_file_icon.svg.png" style="max-width:20px; max-height:20px;" />
+                            <a href="@item.Document" target="_blank">@afterUnderscore</a>
+                            <br />
+                        </div>
+                    }
+                }
+            }
+         </div>
+        <br />
+        <div class="card-footer">
+            <div class="float-end">
+                <button class="btn btn-outline-success" @onclick="BackToActive">&lt Quay lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public int TenderId{ get;set; }
+    public TenderDetailsDTO tenderDetailsDTO { get; set; } = new();
+    public string TenderStartTime = "";
+    public string TenderEndTime = "";
+    public string TenderPickUpDate = "";
+    public string TenderDeliveryDate = "";
+    public string TenderCode = "";
+    public class DocsDisplay
+    {
+        public string Document = "";
+        public string DocumentName = "";
+    }
+    public List<DocsDisplay> docs = new List<DocsDisplay>();
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await TenderService.GetTenderById(TenderId);
+        if(result.Success)
+        {
+            tenderDetailsDTO = result.Data;
+            TenderStartTime = $"{tenderDetailsDTO!.StartDate.Day.ToString()}.{tenderDetailsDTO.StartDate.Month.ToString()}.{tenderDetailsDTO.StartDate.Year.ToString()}, {tenderDetailsDTO!.StartDate.Hour.ToString()}h:{tenderDetailsDTO!.StartDate.Minute.ToString()}p";
+            TenderEndTime = $"{tenderDetailsDTO!.EndDate.Day.ToString()}.{tenderDetailsDTO.EndDate.Month.ToString()}.{tenderDetailsDTO.EndDate.Year.ToString()}, {tenderDetailsDTO!.EndDate.Hour.ToString()}h:{tenderDetailsDTO!.EndDate.Minute.ToString()}p";
+            TenderPickUpDate = $"{tenderDetailsDTO!.PickUpDate!.Value.Day.ToString()}.{tenderDetailsDTO!.PickUpDate!.Value.Month.ToString()}.{tenderDetailsDTO!.PickUpDate!.Value.Year.ToString()}, {tenderDetailsDTO!.PickUpDate!.Value.Hour.ToString()}h:{tenderDetailsDTO!.PickUpDate!.Value.Minute.ToString()}p";
+            TenderCode = $"#000{tenderDetailsDTO.TenderId}";
+            TenderDeliveryDate = $"{tenderDetailsDTO!.DeiliverDate!.Value.Day.ToString()}.{tenderDetailsDTO!.DeiliverDate!.Value.Month.ToString()}.{tenderDetailsDTO!.DeiliverDate!.Value.Year.ToString()}, {tenderDetailsDTO!.DeiliverDate!.Value.Hour.ToString()}h:{tenderDetailsDTO!.DeiliverDate!.Value.Minute.ToString()}p";
+
+            if (tenderDetailsDTO.Documentations != null)
+            {
+                var DocumentDeserializeJson = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(tenderDetailsDTO.Documentations);
+                foreach (var item in DocumentDeserializeJson!)
+                {
+                    foreach (KeyValuePair<string, string> pair in item)
+                    {
+                        var document = Uri.EscapeDataString(pair.Value);
+                        var test = $"\\TenderDocuments\\Tender_{tenderDetailsDTO.TenderId}\\";
+                        var documentsName = pair.Value.ToString().Replace(test, "");
+                        docs.Add(new DocsDisplay
+                            {
+                                Document = document,
+                                DocumentName = documentsName.Replace(test, "")
+                            });
+                    }
+                }
+            }
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+    private void BackToActive()
+    {
+        nav.NavigateTo("/Tenders/Active");
+    }
+}

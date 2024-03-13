@@ -1,0 +1,129 @@
+﻿@inject IJSRuntime js
+@inject ITenderBidService TenderBidService
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager nav
+@using Radzen.Blazor
+@if ((companyRole == CompanyRoleEnum.Admin || companyRole == CompanyRoleEnum.Shipper) && @listBids.Count > 0)
+{
+    <button style="border:none" @onclick="OpenDialog" class="button-offers">
+        <div>@listBids.Count Đề nghị</div>
+    </button>
+}
+else
+{
+    <button disabled style="border:none" @onclick="OpenDialog" class="button-offers">
+        <div>@listBids.Count Đề nghị</div>
+    </button>
+}
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%);" id="bids-details-@listBids.Select(l => l.TenderId).FirstOrDefault()">
+    <div class="card">
+        <div class="card-header text-center">
+            <img src="/images/hammerBid.png" style="min-width:50px;min-height:50px;max-width:100px;max-height:100px;">
+            <h1>Tổng quan đề nghị</h1>
+            <b>Tất cả các đề nghị của các công ty vận tải dành cho bạn</b>
+        </div>
+        <div class="card-body row col-md-12">
+            @* @foreach(var item in listBids)
+            {
+                <div style="min-height:200px;" class="row">
+                    <div class="col-md-6">
+                        <div>
+                            Công ty thầu
+                        </div>
+                        <hr/>
+                        <div>
+                            <b style="white-space:nowrap;word-wrap: break-word!important;">@item.CompanyCarrier!.CompanyName</b>
+                            <div>@item.CompanyCarrier.Email</div>
+                            <div>@item.CompanyCarrier.Address</div>
+                            <div>@item.CompanyCarrier.PhoneNumber</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div>
+                            Giá tiền (VNĐ)
+                        </div>
+                        <hr />
+                        <div>
+                            <b>@item.TransportPrice.ToString("N0")</b>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div></div>
+                        <br />
+                        <hr />
+                        @if (!IsActiveScreen)
+                        {
+                            <ConfirmSelectBid TenderBidId="@item.Id" CompanyName="@item.CompanyCarrier!.CompanyName" Finish="HandleCallBack"></ConfirmSelectBid>
+                        }
+                    </div>
+                </div>
+            } *@
+            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                            Data="@listBids" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single">
+                <Columns>
+                    <RadzenDataGridColumn Filterable="false" TItem="TenderBid" Property="CompanyCarrier.CompanyName" Title="Tên công ty" Frozen="true" Width="160px" />
+                    <RadzenDataGridColumn Filterable="false" TItem="TenderBid" Property="CompanyCarrier.Email" Title="Địa chỉ email" Width="160px" />
+                    <RadzenDataGridColumn Filterable="false" TItem="TenderBid" Property="CompanyCarrier.Address" Title="Địa chỉ" Width="200px" />
+                    <RadzenDataGridColumn Filterable="false" TItem="TenderBid" Property="CompanyCarrier.PhoneNumber" Title="Số điện thoại" Width="120px" />
+                    <RadzenDataGridColumn Filterable="false" TItem="TenderBid" Property="TransportPrice" Title="Giá đặt thầu" FormatString="{0:N0} VNĐ" Width="160px" />
+                    <RadzenDataGridColumn TItem="TenderBid" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="200px">
+                        <Template Context="data">
+                            <ConfirmSelectBid IsActiveScreen=IsActiveScreen TenderBidId="@data.Id" CompanyName="@data.CompanyCarrier!.CompanyName" Finish="HandleCallBack"></ConfirmSelectBid>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+        <div class="card-footer row">
+            <div class="form-group col-md-6">
+                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Đóng</button>
+            </div>
+        </div>
+    </div>
+    
+</dialog>
+@code {
+    [Parameter]
+    public List<TenderBid> listBids { get; set; }
+    [Parameter]
+    public CompanyRoleEnum companyRole { get; set; }
+    [Parameter]
+    public bool IsActiveScreen { get; set; }
+    [Parameter]
+    public EventCallback Finish { get; set; }
+    [Parameter]
+    public bool IsRerenderChild { get; set; }
+    [Parameter]
+    public EventCallback<bool> RerenderChild { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        if (listBids == null) listBids = new();   
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsRerenderChild)
+        {
+            StateHasChanged();
+            IsRerenderChild = !IsRerenderChild;
+            await RerenderChild.InvokeAsync(IsRerenderChild);
+        }
+    }
+    public async Task OpenDialog()
+    {
+        var tenderId = $"{@listBids.Select(l => l.TenderId).FirstOrDefault()}";
+        await js.InvokeVoidAsync("OpenDialog", $"bids-details-{tenderId}");
+    }
+
+    async void Close()
+    {
+        var tenderId = $"{@listBids.Select(l => l.TenderId).FirstOrDefault()}";
+        listBids = new();
+        await js.InvokeVoidAsync("CloseDialog", $"bids-details-{tenderId}");
+        await Finish.InvokeAsync();
+    }
+
+    void HandleCallBack()
+    {
+        Close();
+    }
+}

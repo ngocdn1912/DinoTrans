@@ -1,0 +1,67 @@
+﻿@page "/login"
+@inject AuthenticationStateProvider customAuthenticationStateProvider
+@inject NavigationManager navManager
+@inject IJSRuntime js
+@inject IUserService userClientService
+@layout AuthenticationLayout
+@inject Radzen.DialogService dialogService
+
+<div class="row">
+    <div class="col-lg-9 p-0"></div>
+    <div class="col-lg-3 p-0">
+        <EditForm Enhance Model="User" OnValidSubmit="HandleLogin">
+             <DataAnnotationsValidator />
+             <div class="card bg-white" style="opacity: 0.8; color: #000; display: flex; flex-direction: column; height: 100vh; border-radius:0; border: none;">
+                 <div class="card-header container pt-3">
+                     <div class="row">
+                         <div class="col-lg-12 col-md-12 col-sm-12 d-flex justify-content-center">
+                             <img src="./images/logo2.png" style="width: 50%">
+                         </div>
+
+                     </div>
+                 </div>
+                 <div class="card-body p-4">
+                     <div class="form-group mb-3">
+                         <label class="form-label">Email</label>
+                         <input @bind="User.Email" class="form-control" />
+                     </div>
+
+                     <div class="form-group mb-3">
+                         <label class="form-label">Mật khẩu</label>
+                         <input type="password" @bind="User.Password" class="form-control" />
+                     </div>
+                     <div class="form-group mt-5">
+                         <button class="btn btn-primary" type="submit">Đăng nhập</button>
+                     </div>
+                 </div>
+                 <div class="card-footer text-center">
+                     <div class="col-lg-12 col-md-12 col-sm-12 d-flex justify-content-center">
+                         Bạn chưa có tài khoản?
+                         <a class="btn-link" href="/register">&nbsp;Đăng ký ngay!</a>
+                     </div>
+                 </div>
+             </div>
+         </EditForm>
+     </div>
+ </div>
+
+
+ @code {
+    public LoginDTO User { get; set; } = new();
+
+    async Task HandleLogin()
+    {
+        var (flag, token, message) = await userClientService.LoginAccount(User);
+        if (flag)
+        {
+            //string customMessage = $"{message}{Environment.NewLine}{token}";
+            //await js.InvokeVoidAsync("alert", customMessage);
+            var customAuthStateProvider = (CustomAuthenticationStateProvider)customAuthenticationStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(token); //Lấy thông tin từ JWT token, tạo ClaimsPrincipal và lưu token vào local storage
+            await dialogService.Alert(message, "Thông báo");
+            navManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+            await dialogService.Alert(message);
+    }
+}

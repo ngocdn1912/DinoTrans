@@ -1,0 +1,63 @@
+﻿@inject IJSRuntime js
+@inject ITenderBidService TenderBidService
+
+@if (!IsActiveScreen)
+{
+    <button class="btn btn-outline-success" @onclick="Submit">Chọn đề nghị</button>
+}
+
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:150px" id="confirm-select-TenderBid-@TenderBidId">
+    <div class="card">
+        <div class="card-header text-center">
+            <b>Xác nhận chọn?</b>
+        </div>
+        <div class="card-body">
+            <div>Bạn có chắc muốn chọn công ty @CompanyName để thực hiện vận chuyển?</div>
+        </div>
+        <div class="card-footer row">
+            <div class="form-group col-md-6">
+                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Đóng</button>
+            </div>
+            <div class="form-group col-md-6">
+                <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="OK">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</dialog>
+@code {
+    [Parameter]
+    public int TenderBidId { get; set; }
+    [Parameter]
+    public bool IsActiveScreen { get; set; }
+    [Parameter]
+    public string CompanyName { get; set; }
+    public ApplicationUser _currentUser;
+    [Parameter]
+    public EventCallback Finish { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        if (CompanyName == null) CompanyName = "";
+    }
+    async void Close()
+    {
+        await js.InvokeVoidAsync("CloseDialog", $"confirm-select-TenderBid-{TenderBidId}");
+        TenderBidId = 0;
+        CompanyName = "";
+    }
+    async void OK()
+    {
+        var result = await TenderBidService.ChooseTenderBid(TenderBidId, _currentUser);
+        if (result.Flag)
+        {
+            Close();
+            await Finish.InvokeAsync();
+        }
+        await js.InvokeVoidAsync("alert", result.Message);
+    }
+
+    public async Task Submit()
+    {
+        await js.InvokeVoidAsync("OpenDialog", $"confirm-select-TenderBid-{TenderBidId}");
+    }
+
+}

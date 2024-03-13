@@ -1,0 +1,60 @@
+﻿@inject IJSRuntime js
+@inject ITenderBidService TenderBidService
+
+<button class="btn btn-outline-danger ms-2" type="submit" @onclick="Submit" style="margin-right:5px;">
+    <i class="bi bi-trash"></i>
+    Xóa đặt giá
+</button>
+
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:150px" id="confirm-delete-TenderBid-@TenderBidId">
+    <div class="card">
+        <div class="card-header text-center">
+            <b>Xác nhận xóa đặt giá?</b>
+        </div>
+        <div class="card-body">
+            <div>Bạn có chắc muốn hủy đặt thầu không?</div>
+        </div>
+        <div class="card-footer row">
+            <div class="form-group col-md-6">
+                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Đóng</button>
+            </div>
+            <div class="form-group col-md-6">
+                <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="OK">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</dialog>
+@code {
+    [Parameter]
+    public int TenderBidId { get; set; }
+    public ApplicationUser _currentUser;
+    [Parameter]
+    public EventCallback<ActionTenderBid> Finish { get; set; }
+    async void Close()
+    {
+        await js.InvokeVoidAsync("CloseDialog", $"confirm-delete-TenderBid-{TenderBidId}");
+    }
+    async void OK()
+    {
+        var result = await TenderBidService.DeleteTenderBid(TenderBidId);
+        if (result.Success)
+        {
+            Close();
+            await Finish.InvokeAsync(new ActionTenderBid
+                {
+                    TenderBid = result.Data,
+                    ActionType = TenderActionType.Delete
+                });
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+
+    public async Task Submit()
+    {
+        await js.InvokeVoidAsync("OpenDialog", $"confirm-delete-TenderBid-{TenderBidId}");
+    }
+
+}

@@ -1,0 +1,106 @@
+﻿@inject IConstructionMachineService ConstructionMachineServcie
+<table class="table" style="">
+    <thead>
+        <tr>
+            <th>Ảnh</th>
+            <th>Tên</th>
+            <th>Thương hiệu</th>
+            <th>Số sêri</th>
+            <th>Chiều dài(mm)</th>
+            <th>Chiều rộng(mm)</th>
+            <th>Chiều cao(mm)</th>
+            <th>Trọng lượng(kg)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in constructionMachinesListChooses!)
+        {
+            <tr>
+                @{
+                    item.ListImages = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(item.Image!);
+                }
+                <td>
+                    <ViewAllConstructionMachinePictures MachineId="@item.Id" ListImanges="@item.ListImages"></ViewAllConstructionMachinePictures>
+                </td>
+                <td>@item.Name</td>
+                <td>@item.Brand</td>
+                <td>@item.SerialNumber</td>
+                <td>@item.Length</td>
+                <td>@item.Width</td>
+                <td>@item.Height</td>
+                <td>@item.Weight</td>
+                <td style="width:@item.ButtonWidth; text-align:right">
+                    <button class="btn @item.ButtonStyle" @onclick="() => OnChooseMachine(item)">@item.ButtonText</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+@code {
+    [Parameter]
+    public List<ConstructionMachinesListChoose>? constructionMachinesListChooses { get; set; }
+    [Parameter]
+    public EventCallback<List<int>> ListConstructionMachineIdsReturn { get; set; } = new();
+    [Parameter]
+    public List<int> ListConstructionMachineIds { get; set; } = new();
+    public string ImageResult = "[]";
+    public List<string> Images { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ListConstructionMachineIds != null && ListConstructionMachineIds.Count != 0)
+        {
+            await ListConstructionMachineIdsReturn.InvokeAsync(ListConstructionMachineIds);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ListConstructionMachineIds != null && ListConstructionMachineIds.Count > 0)
+        {
+            foreach (var item in constructionMachinesListChooses!)
+            {
+                if (ListConstructionMachineIds.Contains(item.Id))
+                {
+                    item.IsSelected = true;
+                    item.ButtonText = "- Bỏ chọn máy xây dựng";
+                    item.ButtonStyle = "btn-outline-danger";
+                    item.ButtonWidth = "300px";
+                }
+                else
+                {
+                    item.IsSelected = false;
+                    item.ButtonText = "+ Chọn máy xây dựng";
+                    item.ButtonStyle = "btn-outline-success";
+                    item.ButtonWidth = "260px";
+                }
+            }
+        }
+    }
+
+
+    public void OnChooseMachine(ConstructionMachinesListChoose machine)
+    {
+        if (ListConstructionMachineIds == null)
+            ListConstructionMachineIds = new();
+        machine.IsSelected = !machine.IsSelected;
+        if (machine.IsSelected)
+        {
+            machine.ButtonText = "- Bỏ chọn máy xây dựng";
+            machine.ButtonStyle = "btn-outline-danger";
+            machine.ButtonWidth = "300px";
+            ListConstructionMachineIds.Add(machine.Id);
+        }
+        else
+        {
+            machine.ButtonText = "+ Chọn máy xây dựng";
+            machine.ButtonStyle = "btn-outline-success";
+            machine.ButtonWidth = "260px";
+            ListConstructionMachineIds.Remove(machine.Id);
+        }
+
+        ListConstructionMachineIdsReturn.InvokeAsync(ListConstructionMachineIds);
+    }
+
+}

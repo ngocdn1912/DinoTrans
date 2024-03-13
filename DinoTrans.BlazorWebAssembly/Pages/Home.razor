@@ -1,0 +1,275 @@
+﻿@page "/"
+@inject IDashboardService DashboardService
+@inject IJSRuntime js
+@inject AuthenticationStateProvider AuthenticationState
+@inject IUserService userService
+@inject NavigationManager NavManager
+@using System.Globalization
+
+
+<style>
+    .col-md-6 {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .row.text-center {
+        display: flex;
+    }
+
+    .col-md-4 {
+        flex-grow: 1; /* Độ dài các phần tử col-md-4 sẽ bằng nhau */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: #2fac66;
+        border:1px solid lightgrey
+    }
+
+    .col-md-6 {
+        border: 1px solid lightgrey;
+        padding-right: 5px;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content:space-around;
+    }
+</style>
+
+<PageTitle>Home</PageTitle>
+
+@if (companyRole == CompanyRoleEnum.Shipper)
+{
+    <div class="card">
+        <div class="card-header">
+            <div><b>Chào mừng đến với DinoTrans</b></div>
+            <div>Tìm dịch vụ vận chuyển phù hợp nhất cho bạn</div>
+        </div>
+        <div class="card-header">
+            <div class="col-md-12 row">
+                <div class="col-md-6">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.ActiveTenderNumber
+                            </div>
+                            <div>
+                                Thầu đang hoạt động
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.ToAssignTenderNumber
+                            </div>
+                            <div>
+                                Thầu đang lựa chọn
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.InExecutionTenderNumber
+                            </div>
+                            <div>
+                                Thầu đang tiến hành
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.ConstructionMachineNumber
+                            </div>
+                            <div>
+                                Số lượng máy vận chuyển
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.WithdrawTenderNumber
+                            </div>
+                            <div>
+                                Số lượng thầu thu hồi
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.PercentWithdrawTender %
+                            </div>
+                            <div>
+                                Số lượng thầu đã thu hồi
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.PercentSubmitForTender %
+                            </div>
+                            <div>
+                                Số lượng thầu được đặt giá
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.CompletedTenderNumber
+                            </div>
+                            <div>
+                                Số lượng thầu đã hoàn thành
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForShipper.TotalSuccessTenderMoney
+                            </div>
+                            <div>
+                                Tổng tiền nhận được
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-center" style="background-color:white; align-items:center;">
+                    <img src="./images/logo2.png" alt="Logo" style="max-width: 120px;" />
+                    <div>
+                        <b>@_currentUser.Company!.CompanyName</b>
+                        <div>Chúng tôi là người liên lạc của bạn, chúng tôi sẽ hỗ trợ giải đáp thắc mắc mọi vấn đề liên quan tới vận chuyển và máy xây dựng</div>
+                        <div>Số điện thoại bàn: @_currentUser.PhoneNumber</div>
+                        <div>Số điện thoại di động: @_currentUser.Company.PhoneNumber</div>
+                        <div>Email: @_currentUser.Company.Email</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-header">
+            <div class="col-md-12" style="background-color:white">
+                <h4>Thống kê tiền phải trả</h4>
+                <RadzenChart style="height: 400px">
+                    <RadzenBarSeries Data="@revenue2020" CategoryProperty="Quarter" Title="2020" LineType="LineType.Dashed" ValueProperty="Revenue" Fill="green">
+                        <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                    </RadzenBarSeries>
+                    <RadzenValueAxis Formatter="@FormatAsVND">
+                        <RadzenGridLines Visible="true" />
+                        <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
+                    </RadzenValueAxis>
+                    <RadzenBarOptions Radius="5" />
+                </RadzenChart>
+            </div>
+         </div>
+    </div>
+}
+
+
+
+@code{
+    private readonly ApplicationUser applicationUser;
+    public DashboardForShipper dashboardForShipper { get; set; } = new();
+    public ApplicationUser _currentUser { get; set; } = new ApplicationUser
+    {
+        FirstName = "",
+        LastName = ""
+    };
+    public string UserId { get; set; }
+    public AuthenticationState? authState = null;
+    public int CompanyId { get; set; }
+    private CompanyRoleEnum companyRole = new();
+    protected override async Task OnInitializedAsync()
+    {
+        var customState = (CustomAuthenticationStateProvider)AuthenticationState;
+        authState = await customState.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            var companyId = int.Parse(authState.User.FindFirstValue("CompanyId"));
+            var response = await userService.GetCompanyRole(companyId);
+            if (response.Success)
+            {
+                CompanyId = companyId;
+                if (companyRole == CompanyRoleEnum.Admin || companyRole == CompanyRoleEnum.Shipper)
+                    companyRole = response.Data;
+            }
+        }
+        else
+        {
+            if (!NavManager.Uri.Contains("register"))
+            {
+                NavManager.NavigateTo("/login");
+            }
+            else
+            {
+                NavManager.NavigateTo("/register");
+            }
+        }
+
+        var result = await DashboardService.GetDashBoardForShipper(applicationUser);
+        if (result.Success)
+        {
+            dashboardForShipper = result.Data;
+            _currentUser = result.Data.AdminInfo;
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", result.Message);
+        }
+    }
+
+
+    bool showDataLabels = true;
+
+    class DataItem
+    {
+        public string Quarter { get; set; }
+        public double Revenue { get; set; }
+    }
+
+    string FormatAsVND(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("vn"));
+    }
+
+    DataItem[] revenue2019 = new DataItem[]
+    {
+    new DataItem
+    {
+        Quarter = "Q1",
+        Revenue = 234000
+    },
+    new DataItem
+    {
+        Quarter = "Q2",
+        Revenue = 284000
+    },
+    new DataItem
+    {
+        Quarter = "Q3",
+        Revenue = 274000
+    },
+    new DataItem
+    {
+        Quarter = "Q4",
+        Revenue = 294000
+    },
+    };
+
+    DataItem[] revenue2020 = new DataItem[] {
+    new DataItem
+    {
+    Quarter = "Q1",
+    Revenue = 254000
+    },
+    new DataItem
+    {
+    Quarter = "Q2",
+    Revenue = 324000
+    },
+    new DataItem
+    {
+    Quarter = "Q3",
+    Revenue = 354000
+    },
+    new DataItem
+    {
+    Quarter = "Q4",
+    Revenue = 394000
+    },
+
+    };
+}

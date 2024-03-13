@@ -1,0 +1,31 @@
+﻿@page "/contructionmachine/CompanyId={CompanyId:int}"
+@inject ITenderService TenderService
+@inject AuthenticationStateProvider AuthenticationState
+@inject IUserService UserService
+@inject IJSRuntime js
+<PageTitle>Tender Wizard</PageTitle>
+<div class="card">
+    <div class="card-header">
+        <Tender4steps SelectedStepIndex="selectedStepIndex"></Tender4steps>
+    </div>
+    @if (selectedStepIndex == 0)
+    {
+        <TenderStep1 CompanyId="CompanyId" OnStepChange="OnStep1Change"></TenderStep1>
+    }
+    @if (selectedStepIndex == 1)
+    {
+        <TenderStep2 CompanyId="CompanyId" NewTender="newTender"></TenderStep2>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int CompanyId { get; set; }
+    public int selectedStepIndex { get; set; }
+    public DinoTrans.Shared.Entities.Tender? newTender { get; set; } = null;
+    private void OnStep1Change(TenderChangeStepDTO tender)
+    {
+        selectedStepIndex = tender.CurrentStep;
+        newTender = tender.Tender;
+    }
+}

@@ -1,0 +1,6 @@
+@DinoTrans.IdentityManagerServerAPI_HostAddress = http://localhost:5189
+
+GET {{DinoTrans.IdentityManagerServerAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
