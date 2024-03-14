@@ -41,10 +41,10 @@
         {
             Close();
             await Finish.InvokeAsync(new ActionTenderBid
-                {
-                    TenderBid = result.Data,
-                    ActionType = TenderActionType.Delete
-                });
+            {
+                TenderBid = result.Data,
+                ActionType = TenderActionType.Delete
+            });
         }
         else
         {

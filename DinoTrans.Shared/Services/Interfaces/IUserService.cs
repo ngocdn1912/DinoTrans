@@ -20,6 +20,6 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<GeneralResponse> ChangeUserPassword(ChangePasswordDTO changePasswordDTO);
         Task<GeneralResponse> UpdateIsAdminConfirm();
         Task<ResponseModel<CompanyRoleEnum>> GetCompanyRole(int CompanyId);
-        ResponseModel<ApplicationUser> GetUserById(int UserId);
+        Task<ResponseModel<ApplicationUser>> GetUserById(int UserId);
     }
 }

@@ -23,7 +23,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
     {
         private readonly ITenderService _tenderService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly ApplicationUser _currentUser;
+        private ApplicationUser _currentUser;
         private readonly IUserService _userService;
 
         public TenderController(ITenderService tenderService, IHttpContextAccessor httpContextAccessor, IUserService userService)
@@ -31,17 +31,18 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             _tenderService = tenderService;
             _httpContextAccessor = httpContextAccessor;
             _userService = userService;
+            InitializeAsync();
+        }
 
-            var identity = _httpContextAccessor.HttpContext.User.Identity as ClaimsIdentity;
-            if (identity != null && identity.Claims.Any())
+        private async void InitializeAsync()
+        {
+            var claimsIdentity = _httpContextAccessor!.HttpContext!.User.Identity as ClaimsIdentity;
+            var userIdParse = int.TryParse(claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value, out int userId);
+            if (userIdParse)
             {
-                var userIdParse = int.TryParse(identity.FindFirst(ClaimTypes.NameIdentifier).Value, out int userId);
-                if (userIdParse)
-                {
-                    var user = _userService.GetUserById(userId);
-                    if(user!=null)
+                var user = await _userService.GetUserById(userId);
+                if (user != null)
                     _currentUser = user.Data;
-                }
             }
         }
 

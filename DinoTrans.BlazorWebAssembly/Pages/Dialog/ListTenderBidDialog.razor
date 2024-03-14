@@ -91,22 +91,9 @@ else
     public bool IsActiveScreen { get; set; }
     [Parameter]
     public EventCallback Finish { get; set; }
-    [Parameter]
-    public bool IsRerenderChild { get; set; }
-    [Parameter]
-    public EventCallback<bool> RerenderChild { get; set; }
     protected override async Task OnInitializedAsync()
     {
         if (listBids == null) listBids = new();   
-    }
-    protected override async Task OnParametersSetAsync()
-    {
-        if (IsRerenderChild)
-        {
-            StateHasChanged();
-            IsRerenderChild = !IsRerenderChild;
-            await RerenderChild.InvokeAsync(IsRerenderChild);
-        }
     }
     public async Task OpenDialog()
     {

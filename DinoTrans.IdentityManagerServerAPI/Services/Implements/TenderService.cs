@@ -453,7 +453,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 newTenderToAssignDTO.Bids = Bids.Data;
                 if (newTenderToAssignDTO.Bids.Count > 0)
                 {
-                    if((currentUserCompany!.Role == CompanyRoleEnum.Carrier && newTenderToAssignDTO.Bids.Any(tb => tb.CompanyCarrierId == currentUser!.Id))
+                    if((currentUserCompany!.Role == CompanyRoleEnum.Carrier && newTenderToAssignDTO.Bids.Any(tb => tb.CompanyCarrierId == currentUser!.CompanyId))
                         || (currentUserCompany!.Role == CompanyRoleEnum.Shipper))
                         listTenderToAssignDTO.Add(newTenderToAssignDTO);
                 }

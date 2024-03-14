@@ -105,7 +105,7 @@
                                 <td class="table-tender">Hết hạn</td>
                             }
                             <td class="table-tender">
-                                <ListTenderBidDialog IsRerenderChild="IsRerenderChild" RerenderChild="HandleRerenderChild" IsActiveScreen="@IsActiveScreen" companyRole=" companyRole" listBids="@item.Bids" Finish="HandleCallBack"></ListTenderBidDialog>
+                                <ListTenderBidDialog IsActiveScreen="@IsActiveScreen" companyRole=" companyRole" listBids="@item.Bids" Finish="HandleCallBack"></ListTenderBidDialog>
                             </td>
                             <td class="table-tender">
                                 <span>
@@ -151,15 +151,10 @@
     public CompanyRoleEnum companyRole = new();
     public bool IsActiveScreen { get; set; }
     public int CompanyId { get; set; } = new();
-    public bool IsRerenderChild { get; set; } = false;
     public async Task HandleCallBack()
     {
         searchDTO.pageIndex = 1;
         await CallSearch();
-    }
-    public void HandleRerenderChild(bool RerenderChild)
-    {
-        IsRerenderChild = RerenderChild;
     }
     public async Task HandleEvent(ActionTenderBid newTenderBid)
     {
@@ -223,7 +218,7 @@
             {
                 if (item.TenderId == signalRActiveTimeElapses.TenderBid.TenderId)
                 {
-                    if (item.Bids.Select(b => b.Id).Contains(signalRActiveTimeElapses.TenderBid.Id))
+                    if (item.Bids.Select(b => b.Id).Contains(signalRActiveTimeElapses.TenderBid.Id) && signalRActiveTimeElapses.ActionType == TenderActionType.Update)
                     {
                         var updatedBid = item.Bids.Where(b => b.Id == signalRActiveTimeElapses.TenderBid.Id).FirstOrDefault();
                         if (updatedBid != null)
@@ -251,8 +246,6 @@
                     }
                 }
             }
-            StateHasChanged();
-            IsRerenderChild = true;
         });
 
 

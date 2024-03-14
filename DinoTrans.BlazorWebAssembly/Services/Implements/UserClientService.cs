@@ -7,6 +7,7 @@ using static DinoTrans.Shared.DTOs.ServiceResponses;
 using AutoMapper.Configuration;
 using DinoTrans.Shared.Contracts;
 using DinoTrans.Shared.Entities;
+using System.ComponentModel.Design;
 
 namespace DinoTrans.BlazorWebAssembly.Services.Implements
 {
@@ -128,9 +129,22 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
         }
 
-        public ResponseModel<ApplicationUser> GetUserById(int UserId)
+        public async Task <ResponseModel<ApplicationUser>> GetUserById(int UserId)
         {
-            throw new NotImplementedException();
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetUserById?UserId={UserId}");
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return new ResponseModel<ApplicationUser>
+            {
+                Success = false,
+                Message = $"Cant get user with Id = {UserId}"
+            };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<ApplicationUser>>(apiResponse);
         }
     }
 }
