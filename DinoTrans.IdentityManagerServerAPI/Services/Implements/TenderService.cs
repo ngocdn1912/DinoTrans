@@ -28,7 +28,6 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         private readonly ITenderBidRepository _tenderBidRepository;
         private readonly IConstructionMachineService _machineService;
         private readonly ITenderBidService _tenderBidService;
-
         public TenderService(ITenderRepository tenderRepository,
             ICompanyRepository companyRepository, 
             IConstructionMachineRepository contructionMachineRepository,
@@ -36,7 +35,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             IUnitOfWork unitOfWork,
             ITenderBidRepository tenderBidRepository,
             IConstructionMachineService machineService,
-            ITenderBidService tenderBidService)
+            ITenderBidService tenderBidService,)
         {
             _tenderRepository = tenderRepository;
             _companyRepository = companyRepository;
@@ -231,7 +230,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     var AnyBids = _tenderBidRepository
                         .AsNoTracking()
                         .Any(t => t.TenderId == item.Id);
-                    if (AnyBids && (item.EndDate - DateTime.Now).TotalHours > 24)
+                    //remove để không bị auto withdraw
+                    if ((item.EndDate - DateTime.Now).TotalSeconds > 0 || 
+                        (AnyBids && (item.EndDate - DateTime.Now).TotalSeconds < 0 && (DateTime.Now - item.EndDate).TotalSeconds < 24*60*60) )
                         result.Remove(item);
                 }
             }
@@ -406,6 +407,28 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 Total = listActiveNotPaging.Count(),
                 PageCount = listActiveNotPaging.Count() / 10 + 1
             };    
+        }
+
+        public async Task<ResponseModel<List<TenderInExecutionDTO>>> SearchInExecution(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
+        {
+            var tenderInExecution = await _tenderRepository
+                .AsNoTracking()
+                .Where(t => t.TenderStatus == TenderStatuses.InExcecution
+                && t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId)
+                .ToListAsync();
+
+            var companyRole = await _companyRepository
+                .AsNoTracking()
+                .Where(c => c.Id == currentUser!.CompanyId)
+                .Select(c => c.Role)
+                .FirstOrDefaultAsync();
+
+            if (companyRole == CompanyRoleEnum.Shipper)
+                tenderInExecution = tenderInExecution.Where(t => t.CompanyShipperId == currentUser!.CompanyId).ToList();
+            else if (companyRole == CompanyRoleEnum.Carrier)
+                tenderInExecution = tenderInExecution.Where(t => t.CompanyCarrierId == currentUser!.CompanyId).ToList();
+
+
         }
 
         public async Task<ResponseModel<List<TenderActiveDTO>>> SearchToAssignBy(SearchTenderActiveDTO dto, ApplicationUser? currentUser)

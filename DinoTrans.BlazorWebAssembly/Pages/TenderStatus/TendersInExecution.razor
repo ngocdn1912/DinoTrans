@@ -1,4 +1,4 @@
-﻿@page "/Tenders/Active"
+﻿@page "/Tenders/InExecution"
 @inject ITenderService TenderService
 @inject IJSRuntime js
 @inject NavigationManager nav
@@ -8,12 +8,12 @@
 @inject NavigationManager nav
 @using System.Timers
 @inject ITenderBidService TenderBidService
-<PageTitle>TendersActive</PageTitle>
+<PageTitle>TendersInExecution</PageTitle>
 <div class="card">
     <div class="card-body">
         <div><b>Tất cả thầu đang hoạt động</b></div>
         <hr />
-            <ConstructionMachineSearch searchDTO="searchDTO" searchDTOCallBack="HandleSearchCallBack"></ConstructionMachineSearch>
+        <ConstructionMachineSearch searchDTO="searchDTO" searchDTOCallBack="HandleSearchCallBack"></ConstructionMachineSearch>
         <br />
         <br />
 
@@ -42,7 +42,7 @@
                             <td class="table-tender">@($"#000{item.TenderId}")</td>
                             <td class="table-tender">@item.TenderName</td>
                             <td class="table-tender">
-                                @foreach(var machine in item.ConstructionMachines)
+                                @foreach (var machine in item.ConstructionMachines)
                                 {
                                     <div style="display: block;">@machine.Name - @machine.SerialNumber - @machine.Brand</div>
                                 }
@@ -55,7 +55,8 @@
                             @if (nav.Uri.Contains("Active"))
                             {
                                 <td class="table-tender">@item.Status</td>
-                            }else if (@nav.Uri.Contains("ToAssign"))
+                            }
+                            else if (@nav.Uri.Contains("ToAssign"))
                             {
                                 <td class="table-tender">ToAssign</td>
                             }
@@ -154,7 +155,7 @@
         // Thiết lập kết nối với SignalR Hub
         hubConnection = new HubConnectionBuilder()
             .WithUrl("https://localhost:7017/tenderoffershub") // Thay đổi URL của SignalR Hub của bạn ở đây
-            .Build();            
+            .Build();
 
         hubConnection.On("ReceiveTenders", async () =>
         {
@@ -186,21 +187,21 @@
                 foreach (var item in listActive)
                 {
                     activeTimeElapses.Add(new ActiveTimeElapse
-                    {
-                        TenderId = item.TenderId,
-                        TenderName = item.TenderName,
-                        ConstructionMachines = item.ConstructionMachines,
-                        From = item.From,
-                        To = item.To,
-                        PickUpDate = item.PickUpDate,
-                        DeliveryDate = item.DeliveryDate,
-                        Status = item.Status,
-                        TimeRemaining = item.TimeRemaining,
-                        Bids = item.Bids,
-                        CompanyShipperId = item.CompanyShipperId,
-                        CompanyShipperName = item.CompanyShipperName,
-                        Timer = new(1000)
-                    });
+                        {
+                            TenderId = item.TenderId,
+                            TenderName = item.TenderName,
+                            ConstructionMachines = item.ConstructionMachines,
+                            From = item.From,
+                            To = item.To,
+                            PickUpDate = item.PickUpDate,
+                            DeliveryDate = item.DeliveryDate,
+                            Status = item.Status,
+                            TimeRemaining = item.TimeRemaining,
+                            Bids = item.Bids,
+                            CompanyShipperId = item.CompanyShipperId,
+                            CompanyShipperName = item.CompanyShipperName,
+                            Timer = new(1000)
+                        });
                 }
                 foreach (var item in activeTimeElapses)
                 {
@@ -226,21 +227,21 @@
                 foreach (var item in listActive)
                 {
                     activeTimeElapses.Add(new ActiveTimeElapse
-                    {
-                        TenderId = item.TenderId,
-                        TenderName = item.TenderName,
-                        ConstructionMachines = item.ConstructionMachines,
-                        From = item.From,
-                        To = item.To,
-                        PickUpDate = item.PickUpDate,
-                        DeliveryDate = item.DeliveryDate,
-                        Status = item.Status,
-                        TimeRemaining = item.TimeRemaining,
-                        Bids = item.Bids,
-                        CompanyShipperId = item.CompanyShipperId,
-                        CompanyShipperName = item.CompanyShipperName,
-                        Timer = new(1000)
-                    });
+                        {
+                            TenderId = item.TenderId,
+                            TenderName = item.TenderName,
+                            ConstructionMachines = item.ConstructionMachines,
+                            From = item.From,
+                            To = item.To,
+                            PickUpDate = item.PickUpDate,
+                            DeliveryDate = item.DeliveryDate,
+                            Status = item.Status,
+                            TimeRemaining = item.TimeRemaining,
+                            Bids = item.Bids,
+                            CompanyShipperId = item.CompanyShipperId,
+                            CompanyShipperName = item.CompanyShipperName,
+                            Timer = new(1000)
+                        });
                 }
                 foreach (var item in activeTimeElapses)
                 {

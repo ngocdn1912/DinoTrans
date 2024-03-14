@@ -1,0 +1,75 @@
+﻿<div class="col-md-12 row">
+    <div class="col-md-6 column">
+        <div>
+            <label class="form-label">
+                Tìm kiếm đấu thầu
+            </label>
+        </div>
+        <div>
+            <input type="text" placeholder="Tìm kiếm theo số hiệu thầu, tên thầu và tên máy..." size="45" maxlength="45" @bind="searchDTO.SearchText" @oninput="SetSearchTextChange">
+        </div>
+    </div>
+
+    <div class="col-md-3 column">
+        <div>
+            <label class="form-label">
+                Lọc theo hạng cân
+            </label>
+        </div>
+        <div>
+            <select title="Tất cả" @oninput="SetLoadsChange">
+                <option value="0" label="Tất cả">Tất cả</option>
+                <option value="1" label="Dưới 8 tấn">Dưới 8 tấn</option>
+                <option value="2" label="Từ 8 tới 22 tấn">Từ 8 tới 22 tấn</option>
+                <option value="3" label="Trên 22 tấn">Trên 22 tấn</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="col-md-3 column">
+        <div>
+            <label class="form-label">
+                Lọc theo số lượng công ty đấu giá
+            </label>
+        </div>
+        <div>
+            <select title="Tất cả" @oninput="SetOffersChange">
+                <option value="0">Tất cả</option>
+                <option value="1">Không có công ty nào</option>
+                <option value="2">Có dưới 5 công ty</option>
+                <option value="3">Có trên 5 công ty</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@code{
+    [Parameter]
+    public SearchTenderActiveDTO searchDTO { get; set; }
+    [Parameter]
+    public EventCallback<SearchTenderActiveDTO> searchDTOCallBack { get; set; }
+    public async Task SetSearchTextChange(ChangeEventArgs e)
+    {
+        searchDTO.SearchText = e.Value.ToString();
+        searchDTO.pageIndex = 1;
+        await searchDTOCallBack.InvokeAsync(searchDTO);
+    }
+    public async Task SetLoadsChange(ChangeEventArgs e)
+    {
+        if (SearchActiveByMachines.TryParse(e.Value.ToString(), out SearchActiveByMachines searchLoads))
+        {
+            searchDTO.searchLoads = searchLoads;
+            searchDTO.pageIndex = 1;
+            await searchDTOCallBack.InvokeAsync(searchDTO);
+        }
+    }
+    public async Task SetOffersChange(ChangeEventArgs e)
+    {
+        if (SearchActiveByOffers.TryParse(e.Value.ToString(), out SearchActiveByOffers searchOffers))
+        {
+            searchDTO.searchOffers = searchOffers;
+            searchDTO.pageIndex = 1;
+            await searchDTOCallBack.InvokeAsync(searchDTO);
+        }
+    }
+}
