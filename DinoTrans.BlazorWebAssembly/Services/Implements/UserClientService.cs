@@ -129,7 +129,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
         }
 
-        public async Task <ResponseModel<ApplicationUser>> GetUserById(int UserId)
+        public async Task <ResponseModel<ApplicationUser>> GetUserByIdAsync(int UserId)
         {
             string token = await _localStorageService.GetItemAsStringAsync("token");
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -145,6 +145,11 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<ResponseModel<ApplicationUser>>(apiResponse);
+        }
+
+        public ResponseModel<ApplicationUser> GetUserById(int UserId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

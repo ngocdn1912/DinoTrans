@@ -304,7 +304,25 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             };
         }
 
-        public async Task<ResponseModel<ApplicationUser>> GetUserById(int UserId)
+        public ResponseModel<ApplicationUser> GetUserById(int UserId)
+        {
+            var user = _userRepository.AsNoTracking().Include(u => u.Company).Where(u => u.Id == UserId).FirstOrDefault();
+            if (user == null)
+            {
+                return new ResponseModel<ApplicationUser>
+                {
+                    Success = false,
+                    Message = $"Can't find User with Id = {UserId}"
+                };
+            }
+            return new ResponseModel<ApplicationUser>
+            {
+                Data = user,
+                Success = true
+            };
+        }
+
+        public async Task<ResponseModel<ApplicationUser>> GetUserByIdAsync(int UserId)
         {
             var user = await _userRepository.AsNoTracking().Include(u => u.Company).Where(u => u.Id == UserId).FirstOrDefaultAsync();
             if (user == null)

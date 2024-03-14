@@ -25,16 +25,11 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             _dashboardService = service;
             _contextAccessor = httpContextAccessor;
             _userService = userService;
-            InitializeAsync();
-        }
-
-        private async void InitializeAsync()
-        {
             var claimsIdentity = _contextAccessor!.HttpContext!.User.Identity as ClaimsIdentity;
             var userIdParse = int.TryParse(claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value, out int userId);
             if (userIdParse)
             {
-                var user = await _userService.GetUserById(userId);
+                var user = _userService.GetUserById(userId);
                 if (user != null)
                     _currentUser = user.Data;
             }

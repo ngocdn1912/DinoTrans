@@ -63,7 +63,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUserById([FromQuery] int UserId)
         {
-            var response = await _userService.GetUserById(UserId);
+            var response = _userService.GetUserById(UserId);
             return Ok(response);
         }
 

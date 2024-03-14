@@ -1,30 +1,19 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using DinoTrans.Shared;
 using DinoTrans.Shared.Services.Interfaces;
+using DinoTrans.Shared.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using DinoTrans.Shared.DTOs.TendersActive;
+using DinoTrans.Shared.Entities;
+using DinoTrans.Shared.Repositories.Implements;
 
 namespace DinoTrans.IdentityManagerServerAPI.SignalR
 {
     public class TenderOffersHub : Hub
     {
-        private readonly IUserService _userService;
-
-        public TenderOffersHub(IUserService userService)
+        public async Task SendTenders()
         {
-            _userService = userService;
-        }
-
-        public async Task SendNewBid(ActionTenderBid tenderBid)
-        {
-            await Clients.All.SendAsync("ReceiveNewBid", tenderBid);
-        }
-
-        public override async Task OnConnectedAsync()
-        {
-            if (int.TryParse(Context.UserIdentifier, out int UserId))
-            {
-                var user = await _userService.GetUserById(UserId);
-                var result = user.Data;
-            }
+            await Clients.All.SendAsync("ReceiveTenders");
         }
     }
 }

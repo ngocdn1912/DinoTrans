@@ -156,11 +156,17 @@
         searchDTO.pageIndex = 1;
         await CallSearch();
     }
+    /*
     public async Task HandleEvent(ActionTenderBid newTenderBid)
-    {
+        {
         searchDTO.pageIndex = 1;
         await hubConnection.InvokeAsync("SendNewBid", newTenderBid);
         await CallSearch();
+    }*/
+    public async Task HandleEvent()
+    {
+        searchDTO.pageIndex = 1;
+        await hubConnection.InvokeAsync("SendTenders");
     }
     private async Task OnPageChangedAsync(int newPageNumber)
     {
@@ -210,46 +216,16 @@
         // Thiết lập kết nối với SignalR Hub
         hubConnection = new HubConnectionBuilder()
             .WithUrl("https://localhost:7017/tenderoffershub") // Thay đổi URL của SignalR Hub của bạn ở đây
-            .Build();
+            .Build();            
 
-        hubConnection.On<ActionTenderBid>("ReceiveNewBid", (signalRActiveTimeElapses) =>
+        hubConnection.On("ReceiveTenders", async () =>
         {
-            foreach(var item in activeTimeElapses)
-            {
-                if (item.TenderId == signalRActiveTimeElapses.TenderBid.TenderId)
-                {
-                    if (item.Bids.Select(b => b.Id).Contains(signalRActiveTimeElapses.TenderBid.Id) && signalRActiveTimeElapses.ActionType == TenderActionType.Update)
-                    {
-                        var updatedBid = item.Bids.Where(b => b.Id == signalRActiveTimeElapses.TenderBid.Id).FirstOrDefault();
-                        if (updatedBid != null)
-                        {
-                            updatedBid.Id = signalRActiveTimeElapses.TenderBid.Id;
-                            updatedBid.TenderId = signalRActiveTimeElapses.TenderBid.TenderId;
-                            updatedBid.CompanyCarrierId = signalRActiveTimeElapses.TenderBid.CompanyCarrierId;
-                            updatedBid.TransportPrice = signalRActiveTimeElapses.TenderBid.TransportPrice;
-                            updatedBid.ShipperFee = signalRActiveTimeElapses.TenderBid.ShipperFee;
-                            updatedBid.CarrierFee = signalRActiveTimeElapses.TenderBid.CarrierFee;
-                            updatedBid.IsSelected = signalRActiveTimeElapses.TenderBid.IsSelected;
-                            updatedBid.CompanyCarrier = signalRActiveTimeElapses.TenderBid.CompanyCarrier;
-                            break;
-                        }
-                    }
-                    else if (signalRActiveTimeElapses.ActionType == TenderActionType.Add)
-                    {
-                        item.Bids.Add(signalRActiveTimeElapses.TenderBid);
-                        break;
-                    }
-                    else if (signalRActiveTimeElapses.ActionType == TenderActionType.Delete)
-                    {
-                        item.Bids.Remove(signalRActiveTimeElapses.TenderBid);
-                        break;
-                    }
-                }
-            }
+            await CallSearch();
         });
 
 
         await hubConnection.StartAsync();
+        
     }
 
     public void TenderDetails(int TenderId)
