@@ -64,6 +64,11 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _tenderBidRepository.SaveChange();
             tender.FinalPrice = tenderBid.TransportPrice;
             tender.TenderStatus = TenderStatuses.InExcecution;
+            tender.CompanyCarrierId = _tenderBidRepository
+                .AsNoTracking()
+                .Where(tb => tb.IsSelected)
+                .Select(tb => tb.CompanyCarrierId)
+                .FirstOrDefault();
             _tenderRepository.Update(tender);
             _tenderRepository.SaveChange();
 

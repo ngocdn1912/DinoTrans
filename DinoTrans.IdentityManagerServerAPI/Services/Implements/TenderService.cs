@@ -16,6 +16,8 @@ using Microsoft.IdentityModel.Tokens;
 using NHibernate.Engine;
 using DinoTrans.Shared.DTOs.TendersActive;
 using System.Drawing.Drawing2D;
+using static Azure.Core.HttpHeader;
+using System.Xml.Linq;
 
 namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 {
@@ -46,6 +48,52 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _tenderBidRepository = tenderBidRepository;
             _machineService = machineService;
             _tenderBidService = tenderBidService;
+        }
+
+        public async Task<GeneralResponse> ConfirmCompleteTender(int TenderId, ApplicationUser? currentUser)
+        {
+            var tender = await _tenderRepository
+                .Queryable()
+                .Where(t => t.Id == TenderId)
+                .FirstOrDefaultAsync();
+
+            if(tender == null)
+            {
+                return new GeneralResponse(false, $"Không thể tìm thấy đầu thầu với Id = {TenderId}");
+            }
+
+            if(tender.TenderStatus != TenderStatuses.InExcecution) 
+            {
+                return new GeneralResponse(false, $"Thầu không ở trạng thái đang hoạt động");
+            }
+
+            if(currentUser!.CompanyId != tender.CompanyShipperId || currentUser!.CompanyId != tender.CompanyCarrierId)
+            {
+                return new GeneralResponse(false, "Bạn không sở hữu thầu này");
+            }    
+
+            if(tender.DeiliverDate < DateTime.Now)
+            {
+                return new GeneralResponse(false, "Chưa tới hạn giao máy, không thể kết thúc thầu");
+            }    
+
+            if(currentUser!.CompanyId == tender.CompanyCarrierId)
+            {
+                if (tender.IsCarrierComfirm == true) return new GeneralResponse(false, "Bạn đã đóng thành công vận chuyển này rồi, hãy đợi bên thuê vận chuyển kết thúc thầu");
+                tender.IsCarrierComfirm = true;
+            }
+
+            if (currentUser!.CompanyId == tender.CompanyShipperId)
+            {
+                if(tender.IsCarrierComfirm == false) return new GeneralResponse(false, "Bên công ty giao máy chưa xác nhận, chưa thể kết thúc thầu");
+                if(tender.IsShipperComfirm == true) return new GeneralResponse(false, "Bạn đã đóng thành công vận chuyển này rồi, vui lòng xem chi tiết ở mục Thầu đã hoàn thành");
+                tender.IsShipperComfirm = true;
+            }
+
+            if (tender.IsShipperComfirm && tender.IsCarrierComfirm) tender.TenderStatus = TenderStatuses.Completed;
+            _tenderRepository.Update(tender);
+            _tenderRepository.SaveChange();
+            return new GeneralResponse(true, currentUser!.CompanyId == tender.CompanyCarrierId ? "Bạn đã đóng thầu thành công, hãy chờ công ty tạo thầu kết thúc" : "Bạn đã đóng thầu thành công");
         }
 
         public async Task<ResponseModel<Tender>> CreateTenderStep1(CreateTenderStep1DTO dto)
@@ -412,51 +460,126 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
         public async Task<ResponseModel<List<TenderInExecutionDTO>>> SearchInExecution(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
         {
-            var tenderInExecution = await _tenderRepository
-                .AsNoTracking()     
-                .Where(t => t.TenderStatus == TenderStatuses.InExcecution
-                && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId))
-                .ToListAsync();
-
             var companyRole = await _companyRepository
                 .AsNoTracking()
                 .Where(c => c.Id == currentUser!.CompanyId)
                 .Select(c => c.Role)
                 .FirstOrDefaultAsync();
 
+            var tenderInExecution = (from t in _tenderRepository.AsNoTracking()
+                                    .Where(t => t.TenderStatus == TenderStatuses.InExcecution
+                                    && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId))
+                                    join tb in _tenderBidRepository.AsNoTracking() on t.Id equals tb.TenderId
+                                    join tc in _tenderConstructionMachineRepository.AsNoTracking() on t.Id equals tc.TenderId
+                                    join c in _contructionMachineRepository.AsNoTracking() on tc.ContructionMachineId equals c.Id
+                                    select new
+                                    {
+                                        TenderId = t.Id,
+                                        TenderStatus = t.TenderStatus,
+                                        CompanyShipperId = t.CompanyShipperId,
+                                        FinalCarrierId = t.CompanyCarrierId,
+                                        StartDate = t.StartDate,
+                                        EndDate = t.EndDate,
+                                        FinalPrice = t.FinalPrice,
+                                        IsShipperComfirm = t.IsShipperComfirm,
+                                        IsCarrierComfirm = t.IsCarrierComfirm,
+                                        Notes = t.Notes,
+                                        DeiliverDate = t.DeiliverDate,
+                                        DeliveryAddress = t.DeliveryAddress,
+                                        DeliveryContact = t.DeliveryContact,
+                                        Documentations = t.Documentations,
+                                        Name = t.Name,
+                                        PickUpAddress = t.PickUpAddress,
+                                        PickUpContact = t.PickUpContact,
+                                        PickUpDate = t.PickUpDate,
+                                        TenderBidId = tb.Id,
+                                        SubmitedCompanyCarrierId = tb.CompanyCarrierId,
+                                        TransportPrice = tb.TransportPrice,
+                                        ShipperFee = tb.ShipperFee,
+                                        CarrierFee = tb.CarrierFee,
+                                        IsSelected = tb.IsSelected,
+                                        MachineId = c.Id,
+                                        MachineName = c.Name,
+                                        Brand = c.Brand,
+                                        SerialNumber = c.SerialNumber,
+                                        OwnerCompanyShipperId = c.CompanyShipperId,
+                                        Image = c.Image,
+                                        c.Length,
+                                        c.Width,
+                                        c.Height,
+                                        c.Weight
+                                    }).ToList();
+
             if (companyRole == CompanyRoleEnum.Shipper)
                 tenderInExecution = tenderInExecution.Where(t => t.CompanyShipperId == currentUser!.CompanyId).ToList();
             else if (companyRole == CompanyRoleEnum.Carrier)
-                tenderInExecution = tenderInExecution.Where(t => t.CompanyCarrierId == currentUser!.CompanyId).ToList();
+                tenderInExecution = tenderInExecution.Where(t => t.FinalCarrierId == currentUser!.CompanyId).ToList();
 
-            var machines = (from c in _contructionMachineRepository.AsNoTracking()
-                           join tc in _tenderConstructionMachineRepository.AsNoTracking() on c.Id equals tc.ContructionMachineId
-                           group c by tc.TenderId into g
-                           select new
-                           {
-                               TenderId = g.Key,
-                               Machines = g.ToList()
-                           }).ToList();
+            var bids = tenderInExecution
+                .Select(ta => new TenderBid
+                {
+                    Id = ta.TenderBidId,
+                    TenderId = ta.TenderId,
+                    CompanyCarrierId = ta.SubmitedCompanyCarrierId,
+                    TransportPrice = ta.TransportPrice,
+                    ShipperFee = ta.ShipperFee,
+                    CarrierFee = ta.CarrierFee,
+                    IsSelected = ta.IsSelected,
+                })
+                .GroupBy(ta => new { ta.TenderId, ta.Id, ta.CompanyCarrierId, ta.TransportPrice, ta.ShipperFee, ta.CarrierFee, ta.IsSelected })
+                .Select(ta => new
+                {
+                    Key = ta.Key,
+                    Bids = ta.FirstOrDefault()
+                }).ToList();
 
-            var bids = (from t in tenderInExecution
-                       join tb in _tenderBidRepository.AsNoTracking() on t.Id equals tb.TenderId
-                       group tb by t.Id into g
-                       select new
-                       {
-                           TenderId = g.Key,
-                           Bids = g.ToList()
-                       }).ToList();
+            var machines = tenderInExecution
+                .Select(ta => new
+                {
+                    TenderId = ta.TenderId,
+                    ConstructionMachine = new ContructionMachine
+                    {
+                        Id = ta.MachineId,
+                        Name = ta.MachineName,
+                        Brand = ta.Brand,
+                        SerialNumber = ta.SerialNumber,
+                        CompanyShipperId = ta.OwnerCompanyShipperId,
+                        Length = ta.Length,
+                        Width = ta.Width,
+                        Height = ta.Height,
+                        Weight = ta.Weight,
+                        Image = ta.Image
+                    }
+                })
+                .GroupBy(ta => new { ta.TenderId, ta.ConstructionMachine.Id, ta.ConstructionMachine.Name, ta.ConstructionMachine.Brand, 
+                    ta.ConstructionMachine.SerialNumber, ta.ConstructionMachine.CompanyShipperId, ta.ConstructionMachine.Length, 
+                    ta.ConstructionMachine.Width, ta.ConstructionMachine.Height, ta.ConstructionMachine.Weight, ta.ConstructionMachine.Image })
+                .Select(ta => new
+                {
+                    Key = ta.Key,
+                    Machines = ta.FirstOrDefault(),
+                }).ToList();
+
+            var inexeTenders = _tenderRepository.AsNoTracking().Include(t => t.CompanyCarrier).Include(t => t.CompanyShipper)
+                                    .Where(t => t.TenderStatus == TenderStatuses.InExcecution
+                                    && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId)).ToList();
+
+            if (companyRole == CompanyRoleEnum.Shipper)
+                inexeTenders = inexeTenders.Where(t => t.CompanyShipperId == currentUser!.CompanyId).ToList();
+            else if (companyRole == CompanyRoleEnum.Carrier)
+                inexeTenders = inexeTenders.Where(t => t.CompanyCarrierId == currentUser!.CompanyId).ToList();
 
             var data = new List<TenderInExecutionDTO>();
-            foreach(var item in tenderInExecution)
+            foreach(var item in inexeTenders)
             {
-                var machinesForTender = machines.Where(m => m.TenderId == item.Id).Select(m => m.Machines).FirstOrDefault();
-                var bidsForTender = bids.Where(b => b.TenderId == item.Id).Select(b => b.Bids).FirstOrDefault();
+                var machinesForTender = machines.Where(m => m.Key.TenderId == item.Id).Select(m => m.Machines).ToList();
+                var fmachines = machinesForTender!.Select(m => m.ConstructionMachine).ToList();
+                var bidsForTender = bids.Where(b => b.Key.TenderId == item.Id).Select(b => b.Bids).ToList();
                 var newTenderInExecutionDTO = new TenderInExecutionDTO
                 {
                     TenderId = item.Id,
                     TenderName = item.Name,
-                    ConstructionMachines = machinesForTender!,
+                    ConstructionMachines = fmachines!,
                     From = item.PickUpAddress!,
                     To = item.DeliveryAddress!,
                     PickUpDate = (DateTime)item.PickUpDate!,
@@ -464,16 +587,56 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     Status = item.TenderStatus.ToString(),
                     Bids = bidsForTender,
                     CompanyShipperId = item.CompanyShipperId,
+                    CompanyCarrierId = (int)item.CompanyCarrierId,
                     CompanyShipperName = item.CompanyShipper!.CompanyName,
                     CompanyCarrierName = item.CompanyCarrier!.CompanyName,
                     Price = bidsForTender!.Where(b => b.IsSelected).Select(b => b.TransportPrice).FirstOrDefault()
                 };
                 data.Add(newTenderInExecutionDTO);
             }
+
+            var listNotPaging = data.Where(c => dto.SearchText.IsNullOrEmpty()
+                        || c.TenderName.Contains(dto.SearchText!)
+                        || c.ConstructionMachines.Any(cm => cm.Name.Contains(dto.SearchText!)));
+
+            switch (dto.searchLoads)
+            {
+                case SearchActiveByMachines.All:
+                    break;
+                case SearchActiveByMachines.LessThan8Tons:
+                    listNotPaging = listNotPaging.Where(l => l.ConstructionMachines.Any(c => c.Weight < 8000));
+                    break;
+                case SearchActiveByMachines.From8To22Tons:
+                    listNotPaging = listNotPaging.Where(l => l.ConstructionMachines.Any(c => c.Weight >= 8000 && c.Weight < 22000));
+                    break;
+                case SearchActiveByMachines.From22Tons:
+                    listNotPaging = listNotPaging.Where(l => l.ConstructionMachines.Any(c => c.Weight >= 22000));
+                    break;
+            }
+
+            switch (dto.searchOffers)
+            {
+                case SearchActiveByOffers.All:
+                    break;
+                case SearchActiveByOffers.NoOffers:
+                    listNotPaging = listNotPaging.Where(l => l.Bids.Count == 0);
+                    break;
+                case SearchActiveByOffers.MoreThan5Offers:
+                    listNotPaging = listNotPaging.Where(l => l.Bids.Count > 5);
+                    break;
+                case SearchActiveByOffers.Max5Offers:
+                    listNotPaging = listNotPaging.Where(l => l.Bids.Count <= 5);
+                    break;
+            }
+            var listActivePaging = listNotPaging
+                        .Skip((dto.pageIndex - 1) * dto.pageSize)
+                        .Take(dto.pageSize);
             return new ResponseModel<List<TenderInExecutionDTO>>
             {
-                Data = data,
-                Success = true
+                Data = listActivePaging.ToList(),
+                Success = true,
+                Total = listNotPaging.Count(),
+                PageCount = listNotPaging.Count() / 10 + 1
             }; 
         }
 
@@ -573,7 +736,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 PageCount = listToAssignNotPaging.Count() / 10 + 1
             };
         }
-
+        
         public async Task<ResponseModel<Tender>> StartTender(int TenderId)
         {
             var tender = await _tenderRepository

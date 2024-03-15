@@ -30,13 +30,13 @@
                         <th class="table-tender">Thời gian giao muộn nhất</th>
                         <th class="table-tender">Công ty tạo thầu</th>
                         <th class="table-tender">Trạng thái</th>
-                        <th class="table-tender">Thời gian còn lại</th>
-                        <th class="table-tender">Số lượng đặt giá</th>
+                        <th class="table-tender">Giá (VNĐ)</th>
+                        <th class="table-tender">Giao cho công ty</th>
                         <th class="table-tender">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in activeTimeElapses!)
+                    @foreach (var item in tenderInExecutionDTOs)
                     {
                         <tr>
                             <td class="table-tender">@($"#000{item.TenderId}")</td>
@@ -52,38 +52,15 @@
                             <td class="table-tender">@item.PickUpDate.ToString("dd-MM-yyyy hh:mm:s tt")</td>
                             <td class="table-tender">@item.DeliveryDate.ToString("dd-MM-yyyy hh:mm:s tt")</td>
                             <td class="table-tender">@item.CompanyShipperName</td>
-                            @if (nav.Uri.Contains("Active"))
-                            {
-                                <td class="table-tender">@item.Status</td>
-                            }
-                            else if (@nav.Uri.Contains("ToAssign"))
-                            {
-                                <td class="table-tender">ToAssign</td>
-                            }
-                            @if (item.TimeRemaining > 0)
-                            {
-                                <td class="table-tender">@item.TimeLeft</td>
-                            }
-                            else
-                            {
-                                <td class="table-tender">Hết hạn - đang chờ chọn thầu</td>
-                            }
-                            <td class="table-tender">
-                                <ListTenderBidDialog IsActiveScreen="@IsActiveScreen" companyRole=" companyRole" listBids="@item.Bids" Finish="HandleCallBack"></ListTenderBidDialog>
-                            </td>
+                            <td class="table-tender">@item.Status</td>
+                            <td class="table-tender">@item.Price.ToString("N0")</td>
+                            <td class="table-tender">@item.CompanyCarrierName</td>
                             <td class="table-tender">
                                 <span>
                                     <button style="border:none" @onclick="() => TenderDetails(item.TenderId)">
                                         <img class="img-active-tenders" src="/images/eye-1915455_960_720.png" alt="Eye Icon">
                                     </button>
-                                    @if (authState != null && authState.User.Identity.IsAuthenticated && (companyRole == CompanyRoleEnum.Admin || companyRole == CompanyRoleEnum.Shipper))
-                                    {
-                                        <WithdrawDialog TenderId="item.TenderId" ChangeData="HandleCallBack"></WithdrawDialog>
-                                    }
-                                    @if (authState != null && authState.User.Identity.IsAuthenticated && (companyRole == CompanyRoleEnum.Carrier))
-                                    {
-                                        <DialogBid CompanyId="CompanyId" TenderId="item.TenderId" ChangeData="HandleEvent"></DialogBid>
-                                    }
+                                    <ConfirmCompleteTender Company="companyRole" TenderId="item.TenderId" Finish="Finish"></ConfirmCompleteTender>
                                 </span>
                             </td>
                         </tr>
@@ -106,15 +83,17 @@
 </div>
 @code {
     private HubConnection hubConnection;
-    public List<TenderActiveDTO> listActive { get; set; } = new();
-    public ApplicationUser _user { get; set; }
-    public List<ActiveTimeElapse> activeTimeElapses { get; set; } = new();
+    public List<TenderInExecutionDTO> tenderInExecutionDTOs { get; set; } = new();
     public SearchTenderActiveDTO searchDTO = new SearchTenderActiveDTO();
     public int TotalPage { get; set; }
     public AuthenticationState? authState = null;
     public CompanyRoleEnum companyRole = new();
     public bool IsActiveScreen { get; set; }
     public int CompanyId { get; set; } = new();
+    public async Task Finish()
+    {
+        
+    }
     public async Task HandleCallBack()
     {
         searchDTO.pageIndex = 1;
@@ -137,7 +116,7 @@
         await CallSearch();
     }
     protected override async Task OnInitializedAsync()
-    {
+    {    
         var customState = (CustomAuthenticationStateProvider)AuthState;
         authState = await customState.GetAuthenticationStateAsync();
         if (authState.User.Identity.IsAuthenticated)
@@ -152,6 +131,7 @@
         }
         await CallSearch();
 
+        /*
         // Thiết lập kết nối với SignalR Hub
         hubConnection = new HubConnectionBuilder()
             .WithUrl("https://localhost:7017/tenderoffershub") // Thay đổi URL của SignalR Hub của bạn ở đây
@@ -164,6 +144,7 @@
 
 
         await hubConnection.StartAsync();
+        */
 
     }
 
@@ -174,114 +155,15 @@
 
     private async Task CallSearch()
     {
-        if (nav.Uri.Contains("Active"))
+        var result = await TenderService.SearchInExecution(searchDTO, new ApplicationUser
         {
-            IsActiveScreen = true;
-            var result = await TenderService.SearchActiveBy(searchDTO, _user);
+            FirstName = "",
+            LastName = ""
+        });
 
-            if (result.Success)
-            {
-                listActive = result.Data;
-                TotalPage = result.PageCount;
-                activeTimeElapses = new();
-                foreach (var item in listActive)
-                {
-                    activeTimeElapses.Add(new ActiveTimeElapse
-                        {
-                            TenderId = item.TenderId,
-                            TenderName = item.TenderName,
-                            ConstructionMachines = item.ConstructionMachines,
-                            From = item.From,
-                            To = item.To,
-                            PickUpDate = item.PickUpDate,
-                            DeliveryDate = item.DeliveryDate,
-                            Status = item.Status,
-                            TimeRemaining = item.TimeRemaining,
-                            Bids = item.Bids,
-                            CompanyShipperId = item.CompanyShipperId,
-                            CompanyShipperName = item.CompanyShipperName,
-                            Timer = new(1000)
-                        });
-                }
-                foreach (var item in activeTimeElapses)
-                {
-                    item.Timer.Elapsed += (sender, EventArgs) => CountDown(item);
-                    item.Timer.Start();
-                }
-            }
-            else
-            {
-                await js.InvokeVoidAsync("alert", result.Message);
-            }
-        }
-        else
+        if (result.Success)
         {
-            IsActiveScreen = false;
-            var result = await TenderService.SearchToAssignBy(searchDTO, _user);
-
-            if (result.Success)
-            {
-                listActive = result.Data;
-                TotalPage = result.PageCount;
-                activeTimeElapses = new();
-                foreach (var item in listActive)
-                {
-                    activeTimeElapses.Add(new ActiveTimeElapse
-                        {
-                            TenderId = item.TenderId,
-                            TenderName = item.TenderName,
-                            ConstructionMachines = item.ConstructionMachines,
-                            From = item.From,
-                            To = item.To,
-                            PickUpDate = item.PickUpDate,
-                            DeliveryDate = item.DeliveryDate,
-                            Status = item.Status,
-                            TimeRemaining = item.TimeRemaining,
-                            Bids = item.Bids,
-                            CompanyShipperId = item.CompanyShipperId,
-                            CompanyShipperName = item.CompanyShipperName,
-                            Timer = new(1000)
-                        });
-                }
-                foreach (var item in activeTimeElapses)
-                {
-                    item.Timer.Elapsed += (sender, EventArgs) => CountDown(item);
-                    item.Timer.Start();
-                }
-            }
-            else
-            {
-                await js.InvokeVoidAsync("alert", result.Message);
-            }
+            tenderInExecutionDTOs = result.Data;
         }
-    }
-
-    private async void CountDown(ActiveTimeElapse item)
-    {
-        item.TimeRemaining--;
-        int hours = (int)item.TimeRemaining / 3600;
-        int minutes = (int)item.TimeRemaining / 60 - hours * 60;
-        int seconds = (int)item.TimeRemaining - hours * 3600 - minutes * 60;
-        item.TimeLeft = $"{hours}h:{minutes}m:{seconds}s";
-        if (hours == 0 && minutes == 0 && seconds == 0)
-        {
-            var finalSolution = await TenderBidService.GetTenderBidsByTenderId(item.TenderId);
-            if (!finalSolution.Success) return;
-            var itemBid = finalSolution.Data.Where(b => item.Bids.Select(i => i.Id).Contains(b.Id)).FirstOrDefault();
-            item.TimeLeft = "Hết hạn";
-            item.Timer.Stop();
-            if (finalSolution.Data.Count == 0)
-            {
-                var result = await TenderService.UpdateStatusAuto(new List<int> { item.TenderId });
-                if (!result.Flag)
-                    await js.InvokeVoidAsync("alert", result.Message);
-                else
-                {
-                    activeTimeElapses.Remove(item);
-                }
-            }
-            await CallSearch();
-        }
-        StateHasChanged();
     }
 }

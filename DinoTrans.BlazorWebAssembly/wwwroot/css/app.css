@@ -257,14 +257,9 @@ header {
     color: #2fac66;
 }
 
-
 table {
     width: 100%;
     border-collapse: collapse;
-}
-
-th, td {
-    text-align: center;
 }
 
 th {

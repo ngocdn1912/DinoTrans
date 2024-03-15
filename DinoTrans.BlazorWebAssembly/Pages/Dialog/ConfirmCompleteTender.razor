@@ -1,0 +1,71 @@
+﻿@inject IJSRuntime js
+@inject ITenderService TenderService
+
+<button class="btn btn-outline-success" @onclick="Submit">
+    <i class="bi bi-lock"></i>
+</button>
+
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:150px" id="confirm-finish-tender-@TenderId">
+    <div class="card">
+        <div class="card-header text-center">
+            <b>@Title</b>
+        </div>
+        <div class="card-body">
+            <div>@Body</div>
+        </div>
+        <div class="card-footer row">
+            <div class="form-group col-md-6">
+                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Đóng</button>
+            </div>
+            <div class="form-group col-md-6">
+                <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="OK">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</dialog>
+@code {
+    [Parameter]
+    public int TenderId { get; set; }
+    [Parameter]
+    public CompanyRoleEnum Company { get; set; } = new();
+    [Parameter]
+    public EventCallback Finish { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        if(Company == CompanyRoleEnum.Shipper)
+        {
+            Title = "Xác nhận nhận máy thành công";
+            Body = "Bạn có chắc chắn đã nhận máy thành công và muốn hoàn tất đấu thầu?";
+        }else 
+        {
+            Title = "Xác nhận đã vận chuyển máy thành công?";
+            Body = "Bạn có chắc chắn đã vận chuyển máy thành công và muốn hoàn tất đấu thầu?";
+        }
+    }
+    async void Close()
+    {
+        await js.InvokeVoidAsync("CloseDialog", $"confirm-finish-tender-{TenderId}");
+    }
+    async void OK()
+    {
+        var result = await TenderService.ConfirmCompleteTender(TenderId, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+        if (result.Flag)
+        {
+            Close();
+            await Finish.InvokeAsync();
+        }
+        await js.InvokeVoidAsync("alert", result.Message);
+    }
+
+    public async Task Submit()
+    {
+        await js.InvokeVoidAsync("OpenDialog", $"confirm-finish-tender-{TenderId}");
+    }
+
+}

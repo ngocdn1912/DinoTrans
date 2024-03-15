@@ -2,6 +2,7 @@
 @inject IJSRuntime js
 @inject ITenderService TenderService
 @inject NavigationManager nav
+@inject ITenderBidService TenderBidService
 <div class="card">
     <div class="card-header">
         Tenders > <b>Tender Details</b>
@@ -29,7 +30,7 @@
 
         <br />
 
-        <div class="col-md-12">
+        <div class="col-md-12 row">
             <div class="col-md-6">
                 <label class="form-label">
                     Thông tin địa chỉ và liên hệ nơi nhận
@@ -146,11 +147,54 @@
                 }
             }
          </div>
-        <br />
-        <div class="card-footer">
-            <div class="float-end">
-                <button class="btn btn-outline-success" @onclick="BackToActive">&lt Quay lại</button>
-            </div>
+    </div>
+
+    <br />
+
+    @if (tenderBids.Count > 0)
+    {
+        <div class="card-body">
+            <label class="form-label">
+                Danh sách công ty tham gia đấu thầu
+            </label>
+            <hr />
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tên công ty</th>
+                        <th>Giá đặt (VNĐ)</th>
+                        <th>Trạng thái</th>                            
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in tenderBids)
+                    {
+                        var WinOrLost = "";
+                        @if (item.IsSelected)
+                        {
+                            WinOrLost = "Winner";
+                            BackgroundColor = "#2fac66";
+                        }
+                        else
+                        {
+                            WinOrLost = "Lost";
+                            BackgroundColor = "rgb(211, 47, 47)";
+                        }
+                        <tr>
+                            <td>@item!.CompanyCarrier!.CompanyName</td>
+                            <td>@item!.TransportPrice.ToString("N0")</td>
+                            <td><div style="display: inline-block; color:white; background-color:@BackgroundColor; padding:5px;">@WinOrLost</div></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="card-footer">
+        <div class="float-end">
+            <button class="btn btn-outline-success" @onclick="BackToActive">&lt Quay lại</button>
         </div>
     </div>
 </div>
@@ -158,11 +202,13 @@
     [Parameter]
     public int TenderId{ get;set; }
     public TenderDetailsDTO tenderDetailsDTO { get; set; } = new();
+    public List<TenderBid> tenderBids { get; set; } = new();
     public string TenderStartTime = "";
     public string TenderEndTime = "";
     public string TenderPickUpDate = "";
     public string TenderDeliveryDate = "";
     public string TenderCode = "";
+    public string BackgroundColor { get; set; }
     public class DocsDisplay
     {
         public string Document = "";
@@ -203,6 +249,12 @@
         else
         {
             await js.InvokeVoidAsync("alert", result.Message);
+        }
+
+        var listBids = await TenderBidService.GetTenderBidsByTenderId(TenderId);
+        if(listBids.Success)
+        {
+            tenderBids = listBids.Data;
         }
     }
     private void BackToActive()

@@ -211,5 +211,21 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             return Generics.DeserializeJsonString<ResponseModel<List<TenderInExecutionDTO>>>(apiResponse);
         }
 
+        public async Task<GeneralResponse> ConfirmCompleteTender(int TenderId, ApplicationUser? currentUser)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            // Gửi yêu cầu POST đến endpoint API để đăng nhập
+            var response = await _httpClient
+            .PostAsync($"{BaseUrl}/ConfirmCompleteTender",
+                Generics.GenerateStringContent(Generics.SerializeObj(TenderId)));
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new GeneralResponse(false, "Có lỗi chưa bắt xảy ra");
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
+        }
     }
 }
