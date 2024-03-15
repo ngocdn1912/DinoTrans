@@ -15,6 +15,7 @@ using DinoTrans.Shared.DTOs.SearchDTO;
 using Microsoft.IdentityModel.Tokens;
 using NHibernate.Engine;
 using DinoTrans.Shared.DTOs.TendersActive;
+using System.Drawing.Drawing2D;
 
 namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 {
@@ -35,7 +36,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             IUnitOfWork unitOfWork,
             ITenderBidRepository tenderBidRepository,
             IConstructionMachineService machineService,
-            ITenderBidService tenderBidService,)
+            ITenderBidService tenderBidService)
         {
             _tenderRepository = tenderRepository;
             _companyRepository = companyRepository;
@@ -412,9 +413,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         public async Task<ResponseModel<List<TenderInExecutionDTO>>> SearchInExecution(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
         {
             var tenderInExecution = await _tenderRepository
-                .AsNoTracking()
+                .AsNoTracking()     
                 .Where(t => t.TenderStatus == TenderStatuses.InExcecution
-                && t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId)
+                && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId))
                 .ToListAsync();
 
             var companyRole = await _companyRepository
@@ -428,7 +429,52 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             else if (companyRole == CompanyRoleEnum.Carrier)
                 tenderInExecution = tenderInExecution.Where(t => t.CompanyCarrierId == currentUser!.CompanyId).ToList();
 
+            var machines = (from c in _contructionMachineRepository.AsNoTracking()
+                           join tc in _tenderConstructionMachineRepository.AsNoTracking() on c.Id equals tc.ContructionMachineId
+                           group c by tc.TenderId into g
+                           select new
+                           {
+                               TenderId = g.Key,
+                               Machines = g.ToList()
+                           }).ToList();
 
+            var bids = (from t in tenderInExecution
+                       join tb in _tenderBidRepository.AsNoTracking() on t.Id equals tb.TenderId
+                       group tb by t.Id into g
+                       select new
+                       {
+                           TenderId = g.Key,
+                           Bids = g.ToList()
+                       }).ToList();
+
+            var data = new List<TenderInExecutionDTO>();
+            foreach(var item in tenderInExecution)
+            {
+                var machinesForTender = machines.Where(m => m.TenderId == item.Id).Select(m => m.Machines).FirstOrDefault();
+                var bidsForTender = bids.Where(b => b.TenderId == item.Id).Select(b => b.Bids).FirstOrDefault();
+                var newTenderInExecutionDTO = new TenderInExecutionDTO
+                {
+                    TenderId = item.Id,
+                    TenderName = item.Name,
+                    ConstructionMachines = machinesForTender!,
+                    From = item.PickUpAddress!,
+                    To = item.DeliveryAddress!,
+                    PickUpDate = (DateTime)item.PickUpDate!,
+                    DeliveryDate = (DateTime)item.DeiliverDate!,
+                    Status = item.TenderStatus.ToString(),
+                    Bids = bidsForTender,
+                    CompanyShipperId = item.CompanyShipperId,
+                    CompanyShipperName = item.CompanyShipper!.CompanyName,
+                    CompanyCarrierName = item.CompanyCarrier!.CompanyName,
+                    Price = bidsForTender!.Where(b => b.IsSelected).Select(b => b.TransportPrice).FirstOrDefault()
+                };
+                data.Add(newTenderInExecutionDTO);
+            }
+            return new ResponseModel<List<TenderInExecutionDTO>>
+            {
+                Data = data,
+                Success = true
+            }; 
         }
 
         public async Task<ResponseModel<List<TenderActiveDTO>>> SearchToAssignBy(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
