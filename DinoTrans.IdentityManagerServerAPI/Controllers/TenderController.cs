@@ -111,7 +111,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConfirmCompleteTender(int TenderId)
+        public async Task<IActionResult> ConfirmCompleteTender([FromBody] int TenderId)
         {
             var result = await _tenderService.ConfirmCompleteTender(TenderId, _currentUser);
             return Ok(result);

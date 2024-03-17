@@ -92,7 +92,8 @@
     public int CompanyId { get; set; } = new();
     public async Task Finish()
     {
-        
+        searchDTO.pageIndex = 1;
+        await CallSearch();
     }
     public async Task HandleCallBack()
     {

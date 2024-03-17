@@ -67,12 +67,12 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 return new GeneralResponse(false, $"Thầu không ở trạng thái đang hoạt động");
             }
 
-            if(currentUser!.CompanyId != tender.CompanyShipperId || currentUser!.CompanyId != tender.CompanyCarrierId)
+            if(currentUser!.CompanyId != tender.CompanyShipperId && currentUser!.CompanyId != tender.CompanyCarrierId)
             {
                 return new GeneralResponse(false, "Bạn không sở hữu thầu này");
             }    
 
-            if(tender.DeiliverDate < DateTime.Now)
+            if(tender.DeiliverDate > DateTime.Now)
             {
                 return new GeneralResponse(false, "Chưa tới hạn giao máy, không thể kết thúc thầu");
             }    
@@ -254,7 +254,10 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                              DeliveryContact = t.DeliveryContact,
                              Notes = t.Notes,
                              Documentations = t.Documentations,
-                             ConstructionMachines = constructionMachines
+                             ConstructionMachines = constructionMachines,
+                             IsCarrierConfirm = t.IsCarrierComfirm,
+                             IsShipperConfirm = t.IsShipperComfirm
+                             
                          }).FirstOrDefault();
 
             return new ResponseModel<TenderDetailsDTO>

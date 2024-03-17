@@ -119,7 +119,7 @@
                         </div>
                         <div class="col-md-4">
                             <div>
-                                @dashboardForShipper.TotalSuccessTenderMoney
+                                @dashboardForShipper.TotalSuccessTenderMoney.ToString("N0")
                             </div>
                             <div>
                                 Tổng tiền nhận được
@@ -222,7 +222,7 @@
 
     string FormatAsVND(object value)
     {
-        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("vn"));
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("vi-VN"));
     }
 
     DataItem[] revenue2019 = new DataItem[]

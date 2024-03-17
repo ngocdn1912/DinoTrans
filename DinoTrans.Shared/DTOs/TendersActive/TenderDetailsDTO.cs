@@ -25,6 +25,8 @@ namespace DinoTrans.Shared.DTOs.TendersActive
         public string? Notes { get; set; }
         public string? Documentations { get; set; }
         public List<ConstructionMachinesForTendersDTO> ConstructionMachines { get; set; }
+        public bool IsShipperConfirm { get; set; }
+        public bool IsCarrierConfirm { get; set; }
     }
 
     public class ConstructionMachinesForTendersDTO

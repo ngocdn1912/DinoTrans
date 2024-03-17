@@ -66,7 +66,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             tender.TenderStatus = TenderStatuses.InExcecution;
             tender.CompanyCarrierId = _tenderBidRepository
                 .AsNoTracking()
-                .Where(tb => tb.IsSelected)
+                .Where(tb => tb.IsSelected == true
+                && tb.CompanyCarrierId == tenderBid.CompanyCarrierId)
                 .Select(tb => tb.CompanyCarrierId)
                 .FirstOrDefault();
             _tenderRepository.Update(tender);

@@ -36,6 +36,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         {
             var tenders = await _tenderRepository
                 .AsNoTracking()
+                .Include(t => t.CompanyCarrier)
                 .Where(t => t.CompanyShipperId == _currentUser.CompanyId
                 && t.TenderStatus != TenderStatuses.Draft)
                 .ToListAsync();
@@ -88,6 +89,12 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 .Where(u => u.Id == adminId)
                 .FirstOrDefaultAsync();
 
+            var statisticByCompany = tenders.Where(t => t.TenderStatus == TenderStatuses.Completed).GroupBy(t => new { t.CompanyCarrierId, t.CompanyCarrier!.CompanyName}).Select(t => new TotalMoneyByCompany
+            {
+                CompanyName = t.Key.CompanyName,
+                TotalMoney = (float)t.Sum(t => t.FinalPrice)
+            }).ToList();
+
             return new ResponseModel<DashboardForShipper>
             {
                 Data = new DashboardForShipper
@@ -101,7 +108,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     PercentWithdrawTender = percentWithdrawTender,
                     TotalSuccessTenderMoney = (float) moneyInCompletedTenders,
                     CompletedTenderNumber = completedTenders,
-                    AdminInfo = user!
+                    AdminInfo = user!,
+                    StatisticByCompany = statisticByCompany
                 },
                 Success = true
             };
