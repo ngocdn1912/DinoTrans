@@ -8,10 +8,23 @@
 @inject NavigationManager nav
 @using System.Timers
 @inject ITenderBidService TenderBidService
-<PageTitle>TendersInExecution</PageTitle>
+@if (nav.Uri.Contains("InExecution"))
+{
+    <PageTitle>TendersInExecution</PageTitle>
+}
+else
+{
+    <PageTitle>TendersCompleted</PageTitle>
+}
 <div class="card">
     <div class="card-body">
-        <div><b>Tất cả thầu đang hoạt động</b></div>
+        @if (nav.Uri.Contains("InExecution"))
+        {
+            <div><b>Tất cả thầu đang tiến hành</b></div>
+        }else
+        {
+            <div><b>Tất cả thầu đã hoàn tất</b></div>
+        }
         <hr />
         <ConstructionMachineSearch searchDTO="searchDTO" searchDTOCallBack="HandleSearchCallBack"></ConstructionMachineSearch>
         <br />
@@ -60,7 +73,10 @@
                                     <button style="border:none" @onclick="() => TenderDetails(item.TenderId)">
                                         <img class="img-active-tenders" src="/images/eye-1915455_960_720.png" alt="Eye Icon">
                                     </button>
-                                    <ConfirmCompleteTender Company="companyRole" TenderId="item.TenderId" Finish="Finish"></ConfirmCompleteTender>
+                                    @if (nav.Uri.Contains("InExecution"))
+                                    {
+                                        <ConfirmCompleteTender Company="companyRole" TenderId="item.TenderId" Finish="Finish"></ConfirmCompleteTender>
+                                    }
                                 </span>
                             </td>
                         </tr>
@@ -90,6 +106,8 @@
     public CompanyRoleEnum companyRole = new();
     public bool IsActiveScreen { get; set; }
     public int CompanyId { get; set; } = new();
+    [Parameter]
+    public string NavLink { get; set; }
     public async Task Finish()
     {
         searchDTO.pageIndex = 1;
@@ -136,10 +154,10 @@
         // Thiết lập kết nối với SignalR Hub
         hubConnection = new HubConnectionBuilder()
             .WithUrl("https://localhost:7017/tenderoffershub") // Thay đổi URL của SignalR Hub của bạn ở đây
-            .Build();
+        .Build();
 
         hubConnection.On("ReceiveTenders", async () =>
-        {
+            {
             await CallSearch();
         });
 
@@ -151,20 +169,40 @@
 
     public void TenderDetails(int TenderId)
     {
-        nav.NavigateTo($"/Tenders/Details/{TenderId}");
+        @if (nav.Uri.Contains("InExecution"))
+            nav.NavigateTo($"/Tenders/Details/InExecution/{TenderId}");
+        else
+            nav.NavigateTo($"/Tenders/Details/Completed/{TenderId}");
     }
 
     private async Task CallSearch()
     {
-        var result = await TenderService.SearchInExecution(searchDTO, new ApplicationUser
+        @if (nav.Uri.Contains("InExecution"))
         {
-            FirstName = "",
-            LastName = ""
-        });
+            var result = await TenderService.SearchInExecution(searchDTO, new ApplicationUser
+                {
+                    FirstName = "",
+                    LastName = ""
+                });
 
-        if (result.Success)
+            if (result.Success)
+            {
+                tenderInExecutionDTOs = result.Data;
+            }
+        }
+
+        @if (nav.Uri.Contains("Completed"))
         {
-            tenderInExecutionDTOs = result.Data;
+            var result = await TenderService.SearchCompleted(searchDTO, new ApplicationUser
+                {
+                    FirstName = "",
+                    LastName = ""
+                });
+
+            if (result.Success)
+            {
+                tenderInExecutionDTOs = result.Data;
+            }
         }
     }
 }

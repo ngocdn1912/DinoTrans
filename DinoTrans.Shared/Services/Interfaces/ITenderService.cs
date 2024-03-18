@@ -23,5 +23,6 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<GeneralResponse> UpdateWithdrawTender(WithdrawTenderDTO withdrawTenderDTO);
         Task<ResponseModel<TenderDetailsDTO>> GetTenderById(int Id);
         Task<GeneralResponse> ConfirmCompleteTender(int TenderId, ApplicationUser? currentUser);
+        Task<ResponseModel<List<TenderInExecutionDTO>>> SearchCompleted(SearchTenderActiveDTO dto, ApplicationUser? currentUser);
     }
 }

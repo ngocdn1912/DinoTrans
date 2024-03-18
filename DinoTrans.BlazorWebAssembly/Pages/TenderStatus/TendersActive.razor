@@ -168,7 +168,10 @@
 
     public void TenderDetails(int TenderId)
     {
-        nav.NavigateTo($"/Tenders/Details/{TenderId}");
+        if (nav.Uri.Contains("Active"))
+            nav.NavigateTo($"/Tenders/Details/Active/{TenderId}");
+        else
+            nav.NavigateTo($"/Tenders/Details/ToAssign/{TenderId}");
     }
 
     private async Task CallSearch()

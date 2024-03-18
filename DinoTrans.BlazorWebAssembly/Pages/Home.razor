@@ -122,7 +122,7 @@
                                 @dashboardForShipper.TotalSuccessTenderMoney.ToString("N0")
                             </div>
                             <div>
-                                Tổng tiền nhận được
+                                Tổng tiền nhận được (VNĐ)
                             </div>
                         </div>
                     </div>
@@ -144,7 +144,7 @@
             <div class="col-md-12" style="background-color:white">
                 <h4>Thống kê tiền phải trả</h4>
                 <RadzenChart style="height: 400px">
-                    <RadzenBarSeries Data="@revenue2020" CategoryProperty="Quarter" Title="2020" LineType="LineType.Dashed" ValueProperty="Revenue" Fill="green">
+                    <RadzenBarSeries Data="@listMoneyByCompany" CategoryProperty="CompanyName" Title="Thống kê tiền vận chuyển" LineType="LineType.Dashed" ValueProperty="TotalMoney" Fill="green">
                         <RadzenSeriesDataLabels Visible="@showDataLabels" />
                     </RadzenBarSeries>
                     <RadzenValueAxis Formatter="@FormatAsVND">
@@ -172,6 +172,7 @@
     public AuthenticationState? authState = null;
     public int CompanyId { get; set; }
     private CompanyRoleEnum companyRole = new();
+    public List<TotalMoneyByCompany> listMoneyByCompany { get; set; } = new();
     protected override async Task OnInitializedAsync()
     {
         var customState = (CustomAuthenticationStateProvider)AuthenticationState;
@@ -204,6 +205,7 @@
         {
             dashboardForShipper = result.Data;
             _currentUser = result.Data.AdminInfo;
+            listMoneyByCompany = result.Data.StatisticByCompany;
         }
         else
         {
@@ -222,54 +224,6 @@
 
     string FormatAsVND(object value)
     {
-        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("vi-VN"));
+        return ((double)value).ToString("N0") + " VNĐ";
     }
-
-    DataItem[] revenue2019 = new DataItem[]
-    {
-    new DataItem
-    {
-        Quarter = "Q1",
-        Revenue = 234000
-    },
-    new DataItem
-    {
-        Quarter = "Q2",
-        Revenue = 284000
-    },
-    new DataItem
-    {
-        Quarter = "Q3",
-        Revenue = 274000
-    },
-    new DataItem
-    {
-        Quarter = "Q4",
-        Revenue = 294000
-    },
-    };
-
-    DataItem[] revenue2020 = new DataItem[] {
-    new DataItem
-    {
-    Quarter = "Q1",
-    Revenue = 254000
-    },
-    new DataItem
-    {
-    Quarter = "Q2",
-    Revenue = 324000
-    },
-    new DataItem
-    {
-    Quarter = "Q3",
-    Revenue = 354000
-    },
-    new DataItem
-    {
-    Quarter = "Q4",
-    Revenue = 394000
-    },
-
-    };
 }

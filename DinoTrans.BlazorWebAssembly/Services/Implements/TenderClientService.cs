@@ -227,5 +227,26 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
         }
+
+        public async Task<ResponseModel<List<TenderInExecutionDTO>>> SearchCompleted(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            // Gửi yêu cầu POST đến endpoint API để đăng nhập
+            var response = await _httpClient
+            .PostAsync($"{BaseUrl}/SearchCompleted",
+                Generics.GenerateStringContent(Generics.SerializeObj(dto)));
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new ResponseModel<List<TenderInExecutionDTO>>()
+                {
+                    Success = false,
+                    Message = "Không thể tìm kiếm"
+                };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<List<TenderInExecutionDTO>>>(apiResponse);
+        }
     }
 }

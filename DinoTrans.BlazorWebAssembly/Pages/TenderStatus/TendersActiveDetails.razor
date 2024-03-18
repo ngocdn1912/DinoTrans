@@ -1,4 +1,8 @@
-﻿@page "/Tenders/Details/{TenderId:int}"
+﻿@page "/Tenders/Details/Active/{TenderId:int}"
+@page "/Tenders/Details/ToAssign/{TenderId:int}"
+@page "/Tenders/Details/InExecution/{TenderId:int}"
+@page "/Tenders/Details/Completed/{TenderId:int}"
+
 @inject IJSRuntime js
 @inject ITenderService TenderService
 @inject NavigationManager nav
@@ -151,7 +155,7 @@
 
     <br />
 
-    @if (tenderBids.Count > 0)
+    @if (tenderBids.Count > 0 && (nav.Uri.Contains("InExecution") || nav.Uri.Contains("Completed")))
     {
         <div class="card-body">
             <label class="form-label">
@@ -259,6 +263,13 @@
     }
     private void BackToActive()
     {
-        nav.NavigateTo("/Tenders/Active");
+        @if (nav.Uri.Contains("Active"))
+            nav.NavigateTo("/Tenders/Active");
+        else if (nav.Uri.Contains("ToAssign"))
+            nav.NavigateTo("/Tenders/ToAssign");
+        else if (nav.Uri.Contains("InExecution"))
+            nav.NavigateTo("/Tenders/InExecution");
+        else if (nav.Uri.Contains("Completed"))
+            nav.NavigateTo("/Tenders/Completed");
     }
 }
