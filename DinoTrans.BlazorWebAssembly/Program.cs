@@ -32,6 +32,7 @@ builder.Services.AddScoped<IConstructionMachineService, ConstructionMachineClien
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 builder.Services.AddScoped<ITenderBidService, TenderBidClientService>();
 builder.Services.AddScoped<IDashboardService, DashboardServiceClient>();
+builder.Services.AddScoped<ICompanyService, CompanyClientService>();
 
 
 

@@ -1,4 +1,18 @@
 ﻿@inject IConstructionMachineService ConstructionMachineServcie
+<header>Thông tin máy xây dựng</header>
+<hr />
+<div class="col-md-12 row mt-1 mb-2">
+    <div class="col-md-8">
+        <input type="text" class="form-control" value="@searchText"
+               @onchange="@((ChangeEventArgs e) => ChangeText(e))"
+               placeholder="Tìm kiếm máy xây dựng..." />
+
+    </div>
+    <div class="col-md-2"></div>
+    <div class="col-md-2 p-0">
+        <NewConstructionMachineDialog IsDefaultEvent="IsDefaultEvent" CallDefaultEvent="HandleDefaultEvent" addedmachine="recallAPI" CompanyId="CompanyId"></NewConstructionMachineDialog>
+    </div>
+</div>
 <table class="table" style="">
     <thead>
         <tr>
@@ -37,15 +51,39 @@
         }
     </tbody>
 </table>
+
+<div class="float-end">
+    <Pagination ActivePageNumber="@currentPageNumber"
+                TotalPages="TotalPage"
+                DisplayPages="2"
+                FirstLinkIcon="IconName.ChevronDoubleLeft"
+                PreviousLinkIcon="IconName.ChevronLeft"
+                NextLinkIcon="IconName.ChevronRight"
+                LastLinkIcon="IconName.ChevronDoubleRight"
+                PageChanged="OnPageChangedAsync" />
+</div>
 @code {
+    [Parameter]
+    public int TotalPage { get; set; }
+    [Parameter]
+    public int CompanyId { get; set; }
     [Parameter]
     public List<ConstructionMachinesListChoose>? constructionMachinesListChooses { get; set; }
     [Parameter]
     public EventCallback<List<int>> ListConstructionMachineIdsReturn { get; set; } = new();
     [Parameter]
+    public EventCallback<string> searchTextChange { get; set; }
+    [Parameter]
+    public EventCallback recallApi { get; set; }
+    [Parameter]
     public List<int> ListConstructionMachineIds { get; set; } = new();
+    [Parameter]
+    public EventCallback<int> CurrentPageNumber { get; set; }
+    public bool IsDefaultEvent { get; set; } = true;
+    public int currentPageNumber { get; set; }
     public string ImageResult = "[]";
     public List<string> Images { get; set; } = new();
+    public string searchText { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,6 +91,19 @@
         {
             await ListConstructionMachineIdsReturn.InvokeAsync(ListConstructionMachineIds);
         }
+    }
+    private async Task HandleDefaultEvent(bool IsDefault)
+    {
+        IsDefaultEvent = IsDefault;
+    }
+    private async Task recallAPI()
+    {
+        await recallApi.InvokeAsync();
+    }
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        await Task.Run(() => { currentPageNumber = newPageNumber; });
+        await CurrentPageNumber.InvokeAsync(currentPageNumber);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -79,6 +130,12 @@
         }
     }
 
+    private async Task ChangeText(ChangeEventArgs e)
+    {
+        searchText = e?.Value.ToString();
+        IsDefaultEvent = true;
+        await searchTextChange.InvokeAsync(searchText);
+    }
 
     public void OnChooseMachine(ConstructionMachinesListChoose machine)
     {

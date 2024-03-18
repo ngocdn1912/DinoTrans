@@ -8,7 +8,18 @@
 @inject NavigationManager nav
 @using System.Timers
 @inject ITenderBidService TenderBidService
-<PageTitle>TendersActive</PageTitle>
+@if(nav.Uri.Contains("Active"))
+{
+    <PageTitle>TendersActive</PageTitle>
+}
+else if(nav.Uri.Contains("ToAssign"))
+{
+    <PageTitle>TendersToAssign</PageTitle>
+}
+else if (nav.Uri.Contains("Withdraw"))
+{
+    <PageTitle>TendersToWithdraw</PageTitle>
+}
 <div class="card">
     <div class="card-body">
         <div><b>Tất cả thầu đang hoạt động</b></div>
@@ -30,7 +41,14 @@
                         <th class="table-tender">Thời gian giao muộn nhất</th>
                         <th class="table-tender">Công ty tạo thầu</th>
                         <th class="table-tender">Trạng thái</th>
-                        <th class="table-tender">Thời gian còn lại</th>
+                        @if (!nav.Uri.Contains("Withdraw"))
+                        {
+                            <th class="table-tender">Thời gian còn lại</th>
+                        }
+                        else
+                        {
+                            <th class="table-tender">Lý do hủy</th>
+                        }
                         <th class="table-tender">Số lượng đặt giá</th>
                         <th class="table-tender">Hành động</th>
                     </tr>
@@ -59,13 +77,24 @@
                             {
                                 <td class="table-tender">ToAssign</td>
                             }
-                            @if (item.TimeRemaining > 0)
+                            else
                             {
-                                <td class="table-tender">@item.TimeLeft</td>
+                                <td class="table-tender">Withdraw</td>
+                            }
+                            @if (!nav.Uri.Contains("Withdraw"))
+                            {
+                                @if (item.TimeRemaining > 0)
+                                {
+                                    <td class="table-tender">@item.TimeLeft</td>
+                                }
+                                else
+                                {
+                                    <td class="table-tender">Hết hạn - đang chờ chọn thầu</td>
+                                }
                             }
                             else
                             {
-                                <td class="table-tender">Hết hạn - đang chờ chọn thầu</td>
+                                <td class="table-tender">@item.WithdrawReason</td>
                             }
                             <td class="table-tender">
                                 <ListTenderBidDialog IsActiveScreen="@IsActiveScreen" companyRole=" companyRole" listBids="@item.Bids" Finish="HandleCallBack"></ListTenderBidDialog>
@@ -75,11 +104,11 @@
                                     <button style="border:none" @onclick="() => TenderDetails(item.TenderId)">
                                         <img class="img-active-tenders" src="/images/eye-1915455_960_720.png" alt="Eye Icon">
                                     </button>
-                                    @if (authState != null && authState.User.Identity.IsAuthenticated && (companyRole == CompanyRoleEnum.Admin || companyRole == CompanyRoleEnum.Shipper))
+                                    @if (authState != null && authState.User.Identity.IsAuthenticated && (companyRole == CompanyRoleEnum.Admin || companyRole == CompanyRoleEnum.Shipper) && !nav.Uri.Contains("Withdraw"))
                                     {
                                         <WithdrawDialog TenderId="item.TenderId" ChangeData="HandleCallBack"></WithdrawDialog>
                                     }
-                                    @if (authState != null && authState.User.Identity.IsAuthenticated && (companyRole == CompanyRoleEnum.Carrier))
+                                    @if (authState != null && authState.User.Identity.IsAuthenticated && (companyRole == CompanyRoleEnum.Carrier) && !nav.Uri.Contains("Withdraw"))
                                     {
                                         <DialogBid CompanyId="CompanyId" TenderId="item.TenderId" ChangeData="HandleEvent"></DialogBid>
                                     }
@@ -170,8 +199,10 @@
     {
         if (nav.Uri.Contains("Active"))
             nav.NavigateTo($"/Tenders/Details/Active/{TenderId}");
-        else
+        else if (nav.Uri.Contains("ToAssign"))
             nav.NavigateTo($"/Tenders/Details/ToAssign/{TenderId}");
+        else
+            nav.NavigateTo($"/Tenders/Details/Withdraw/{TenderId}");
     }
 
     private async Task CallSearch()
@@ -216,7 +247,7 @@
                 await js.InvokeVoidAsync("alert", result.Message);
             }
         }
-        else
+        else if (nav.Uri.Contains("ToAssign"))
         {
             IsActiveScreen = false;
             var result = await TenderService.SearchToAssignBy(searchDTO, _user);
@@ -249,6 +280,42 @@
                 {
                     item.Timer.Elapsed += (sender, EventArgs) => CountDown(item);
                     item.Timer.Start();
+                }
+            }
+            else
+            {
+                await js.InvokeVoidAsync("alert", result.Message);
+            }
+        }
+        else if (nav.Uri.Contains("Withdraw"))
+        {
+            IsActiveScreen = true;
+            var result = await TenderService.SearchWithdrawBy(searchDTO, _user);
+
+            if (result.Success)
+            {
+                listActive = result.Data;
+                TotalPage = result.PageCount;
+                activeTimeElapses = new();
+                foreach (var item in listActive)
+                {
+                    activeTimeElapses.Add(new ActiveTimeElapse
+                        {
+                            TenderId = item.TenderId,
+                            TenderName = item.TenderName,
+                            ConstructionMachines = item.ConstructionMachines,
+                            From = item.From,
+                            To = item.To,
+                            PickUpDate = item.PickUpDate,
+                            DeliveryDate = item.DeliveryDate,
+                            Status = item.Status,
+                            TimeRemaining = item.TimeRemaining,
+                            Bids = item.Bids,
+                            CompanyShipperId = item.CompanyShipperId,
+                            CompanyShipperName = item.CompanyShipperName,
+                            Timer = new(1000),
+                            WithdrawReason = item.WithdrawReason
+                        });
                 }
             }
             else

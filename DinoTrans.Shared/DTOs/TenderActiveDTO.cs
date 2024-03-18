@@ -21,6 +21,7 @@ namespace DinoTrans.Shared.DTOs
         public List<TenderBid> Bids { get; set; }
         public int CompanyShipperId { get; set; }
         public string CompanyShipperName { get; set; }
+        public string WithdrawReason { get; set; }
     }
 
     /*public class TenderActiveDTO_Test

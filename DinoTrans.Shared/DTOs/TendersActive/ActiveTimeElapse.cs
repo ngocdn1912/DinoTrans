@@ -19,5 +19,6 @@ namespace DinoTrans.Shared.DTOs.TendersActive
         public string CompanyShipperName { get; set; }
         public Timer Timer { get; set; }
         public string TimeLeft { get; set; }
+        public string WithdrawReason { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<ResponseModel<Tender>> StartTender(int TenderId);
         Task<ResponseModel<List<TenderActiveDTO>>> SearchActiveBy (SearchTenderActiveDTO dto, ApplicationUser? currentUser);
         Task<ResponseModel<List<TenderActiveDTO>>> SearchToAssignBy(SearchTenderActiveDTO dto, ApplicationUser? currentUser);
+        Task<ResponseModel<List<TenderActiveDTO>>> SearchWithdrawBy(SearchTenderActiveDTO dto, ApplicationUser? currentUser);
         Task<ResponseModel<List<TenderInExecutionDTO>>> SearchInExecution(SearchTenderActiveDTO dto, ApplicationUser? currentUser);
         /*      Task<ResponseModel<List<TenderActiveDTO_Test>>> SearchActiveBy_Test(SearchTenderActiveDTO dto, ApplicationUser? currentUser);
         */

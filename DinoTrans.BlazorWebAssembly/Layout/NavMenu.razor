@@ -59,21 +59,38 @@
                                     <NavLink class="nav-link" href="/Tenders/ToAssign">Lựa chọn nhà thầu</NavLink>
                                     <NavLink class="nav-link" href="/Tenders/InExecution">Đang tiến hành</NavLink>
                                     <NavLink class="nav-link" href="/Tenders/Completed">Đã hoàn thành</NavLink>
-                                    <NavLink class="nav-link" href="/Tenders/b">Đã hủy</NavLink>
+                                    <NavLink class="nav-link" href="/Tenders/Withdraw">Đã hủy</NavLink>
                                 </div>
                             }
                         </div>
                     }
-                    @*                     @if (authState != null && authState.User.Identity.IsAuthenticated && companyRole == CompanyRoleEnum.Shipper)
+                    @if (authState != null && authState.User.Identity.IsAuthenticated)
                     {
-                    <div class="nav-item">
-                    <NavLink class="nav-link" href="@($"contructionmachine/CompanyId={CompanyId}")">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Quản lý máy xây dựng
-                    </NavLink>
-                    </div>
+                        <div class="nav-item">
+                            <a class="nav-link" @onclick="ShowCompanySettingPages" style="display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-nested" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5m-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5" />
+                                </svg>
+                                <span>Quản lý công ty</span>
+                                <span style="margin-left: auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-chevron-compact-down" viewBox="0 0 14 14" style="margin-right: 0; width: 12px;">
+                                        <path fill-rule="evenodd" d="M1.553 6.776a.5.5 0 0 1 .67-.223L8 9.44l5.776-2.888a.5.5 0 1 1 .448.894l-6 3a.5.5 0 0 1-.448 0l-6-3a.5.5 0 0 1-.223-.67" />
+                                    </svg>
+                                </span>
+                            </a>
+                            @if (IsDisplayCompanySettingPages)
+                            {
+                                <div class="nav flex-column ml-3">
+                                    <NavLink class="nav-link" href="/CompanySettings/Company">Quản lý công ty</NavLink>
+                                    <NavLink class="nav-link" href="/CompanySettings/Employees">Quản lý nhân viên</NavLink>
+                                    @if (companyRole == CompanyRoleEnum.Shipper)
+                                    {
+                                        <NavLink class="nav-link" href="/CompanySettings/ConstructionMachines">Quản lý máy xây dựng</NavLink>
+                                    }
+                                </div>
+                            }
+                        </div>
                     }
-                    /Tenders/Active
-                    *@
                 </nav>
             </div>
         </div>
@@ -89,6 +106,7 @@
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
     public int CompanyId = new();
     private bool IsDisplayTendersPages = false;
+    private bool IsDisplayCompanySettingPages = false;
     protected override async Task OnInitializedAsync()
     {
         var customState = (CustomAuthenticationStateProvider)AuthenticationState;
@@ -120,6 +138,11 @@
     private void ShowTendersPages()
     {
         IsDisplayTendersPages = !IsDisplayTendersPages;
+    }
+
+    private void ShowCompanySettingPages()
+    {
+        IsDisplayCompanySettingPages = !IsDisplayCompanySettingPages;
     }
 
     private void ToggleNavMenu()

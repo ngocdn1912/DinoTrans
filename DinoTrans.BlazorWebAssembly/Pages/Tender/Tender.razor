@@ -4,6 +4,7 @@
 @inject IUserService UserService
 @inject IJSRuntime js
 <PageTitle>Tender Wizard</PageTitle>
+<Toasts class="p-3" Messages="messages" Placement="ToastsPlacement.TopRight" />
 <div class="card">
     @if(selectedStepIndex != 3)
     {
@@ -40,6 +41,7 @@
     public string Documents { get; set; }
     public bool IsReturnFromStep3 = false;
     public List<InputFileData> InputFiles { get; set; } = new();
+    List<ToastMessage> messages = new List<ToastMessage>();
     private void OnStepChange(TenderChangeStepDTO tender)
     {
         newTender = tender.Tender;

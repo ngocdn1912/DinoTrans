@@ -47,33 +47,9 @@
             </div>
             @*  Máy cần vận chuyển *@
             <div class="col-md-12 mt-5">
-                <header>Thông tin máy xây dựng</header>
-                <hr />
-                <div class="col-md-12 row mt-1 mb-2">
-                    <div class="col-md-8">
-                        <input type="text" class="form-control" value="@searchText"
-                               @onchange="@((ChangeEventArgs e) => ChangeText(e))"
-                               placeholder="Tìm kiếm máy xây dựng..." />
-
-                    </div>
-                    <div class="col-md-2"></div>
-                    <div class="col-md-2 p-0">
-                        <NewConstructionMachineDialog IsDefaultEvent=IsDefaultEvent CallDefaultEvent=HandleDefaultEvent addedmachine="recallAPI" CompanyId="CompanyId"></NewConstructionMachineDialog>
-                    </div>
-                </div>
-
                 <div class="col-md-12">
-                    <ConstructionMachineList ListConstructionMachineIdsReturn="HandleChooseMachines" constructionMachinesListChooses="contructionMachinesChoose" ListConstructionMachineIds="MachineIdsStep2"></ConstructionMachineList>
-                    <div class="float-end">
-                        <Pagination ActivePageNumber="@currentPageNumber"
-                                    TotalPages="TotalPage"
-                                    DisplayPages="2"
-                                    FirstLinkIcon="IconName.ChevronDoubleLeft"
-                                    PreviousLinkIcon="IconName.ChevronLeft"
-                                    NextLinkIcon="IconName.ChevronRight"
-                                    LastLinkIcon="IconName.ChevronDoubleRight"
-                                    PageChanged="OnPageChangedAsync" />
-                    </div>
+                    <ConstructionMachineList CompanyId="CompanyId" CurrentPageNumber="OnPageChangedAsync"
+                        TotalPage="TotalPage" searchTextChange="ChangeText" ListConstructionMachineIdsReturn="HandleChooseMachines" constructionMachinesListChooses="contructionMachinesChoose" ListConstructionMachineIds="MachineIdsStep2"></ConstructionMachineList>
                 </div>
             </div>
             @*Địa chỉ và liên lạc nhận hàng và giao hàng*@
@@ -135,11 +111,8 @@
                         @if (!IsReturnFromStep3)
                         {
                             <label class="btn btn-outline-success float-end" style="position: relative; overflow: hidden;">
-
-
                                 <span>+ Thêm tài liệu</span>
                                 <InputFile id="fileInput" OnChange="@HandleFileSelection" multiple style="opacity: 0; width: 150px; height: 150px; position: absolute; top: 0; left: 0; cursor: pointer; z-index: 2;" />
-
                             </label>
                         }
                     </span>
@@ -149,22 +122,22 @@
                             @foreach (var file in selectedFiles)
                             {//if nhận được là từ step 3 thì mới hiển thị để click, không thì thôi.
                              //vẫn phải add được vào loadFiles
-                <tr>
-                    <img src="/images/PDF_file_icon.svg.png" style="max-width:20px; max-height:20px;" class="me-2" />
-                    <td style="padding-right:5px;">@file.Name</td>
-                    <td>
+                                <tr>
+                                    <img src="/images/PDF_file_icon.svg.png" style="max-width:20px; max-height:20px;" class="me-2" />
+                                    <td style="padding-right:5px;">@file.Name</td>
+                                    <td>
                                         @if (!IsReturnFromStep3)
                                         {
-                            <button class="btn btn-outline-danger" @onclick="() => RemoveDocument(file)">- Xóa</button>
+                                            <button class="btn btn-outline-danger" @onclick="() => RemoveDocument(file)">- Xóa</button>
                                         }
-                    </td>
-                </tr>
+                                    </td>
+                                </tr>
                             }
                         }
-</div>
                     </div>
-             </div>
-        </div>
+                </div>
+            </div>
+    </div>
 
 <hr />
 <div class="form-group row float-end">
@@ -438,10 +411,9 @@
         await SearchOnInputChange();
     }
 
-    private async Task ChangeText(ChangeEventArgs e)
+    private async Task ChangeText(string text)
     {
-        IsDefaultEvent = true;
-        searchText = e?.Value.ToString();
+        searchText = text;
         await SearchOnInputChange();
     }
 

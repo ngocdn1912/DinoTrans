@@ -2,6 +2,7 @@
 @page "/Tenders/Details/ToAssign/{TenderId:int}"
 @page "/Tenders/Details/InExecution/{TenderId:int}"
 @page "/Tenders/Details/Completed/{TenderId:int}"
+@page "/Tenders/Details/Withdraw/{TenderId:int}"
 
 @inject IJSRuntime js
 @inject ITenderService TenderService
@@ -155,7 +156,7 @@
 
     <br />
 
-    @if (tenderBids.Count > 0 && (nav.Uri.Contains("InExecution") || nav.Uri.Contains("Completed")))
+    @if (tenderBids.Count > 0 && (nav.Uri.Contains("InExecution") || nav.Uri.Contains("Completed")) && !nav.Uri.Contains("Withdraw"))
     {
         <div class="card-body">
             <label class="form-label">
@@ -271,5 +272,7 @@
             nav.NavigateTo("/Tenders/InExecution");
         else if (nav.Uri.Contains("Completed"))
             nav.NavigateTo("/Tenders/Completed");
+        else if (nav.Uri.Contains("Withdraw"))
+            nav.NavigateTo("/Tenders/Withdraw");
     }
 }
