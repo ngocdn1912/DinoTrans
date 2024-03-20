@@ -6,6 +6,7 @@ using DinoTrans.Shared.DTOs.SearchDTO;
 using DinoTrans.Shared.Entities;
 using DinoTrans.Shared.GenericModels;
 using DinoTrans.Shared.Services.Interfaces;
+using FluentNHibernate.Mapping;
 using static DinoTrans.Shared.DTOs.ServiceResponses;
 
 namespace DinoTrans.BlazorWebAssembly.Services.Implements
@@ -117,6 +118,22 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<ResponseModel<List<ContructionMachine>>>(apiResponse);
+        }
+
+        public async Task<GeneralResponse> EditConstructionMachine(EditConstructionMachineDTO dto)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .PutAsync($"{BaseUrl}/EditConstructionMachine",
+                Generics.GenerateStringContent(Generics.SerializeObj(dto)));
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new GeneralResponse(false, "Can't search construction machine");
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
         }
     }
 }

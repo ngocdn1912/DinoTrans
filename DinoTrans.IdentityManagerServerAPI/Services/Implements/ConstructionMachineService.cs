@@ -258,5 +258,29 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 PageCount = machines.Count()/5 + 1            
             };
         }
+
+        public async Task<GeneralResponse> EditConstructionMachine(EditConstructionMachineDTO dto)
+        {
+            var machine = await _constructionMachineRepository
+                .AsNoTracking()
+                .Where(c => c.Id == dto.MachineId)
+                .FirstOrDefaultAsync();
+
+            if(machine == null)
+            {
+                return new GeneralResponse(false, "Không tìm thấy máy");
+            }    
+
+            machine.Name = dto.Name;
+            machine.Brand = dto.Brand;
+            machine.SerialNumber = dto.SerialNumber;
+            machine.Length = dto.Length;
+            machine.Width = dto.Width;
+            machine.Height = dto.Height;
+            machine.Weight = dto.Weight;
+            _constructionMachineRepository.Update(machine);
+            _constructionMachineRepository.SaveChange();
+            return new GeneralResponse(true, "Cập nhật thành công");
+        }
     }
 }

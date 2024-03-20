@@ -70,5 +70,12 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             var result = await _constructionMachineService.GetMachinesByCurrentShipperId(dto, _currentUser);
             return Ok(result);
         }
+
+        [HttpPut]
+        public async Task<IActionResult> EditConstructionMachine(EditConstructionMachineDTO dto)
+        {
+            var result = await _constructionMachineService.EditConstructionMachine(dto);
+            return Ok(result);
+        }
     }
 }

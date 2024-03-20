@@ -1,0 +1,119 @@
+﻿@inject IJSRuntime js
+@inject IConstructionMachineService ConstructionMachineService
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Hosting
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:500px" id="my-editdialog-@updateConstructionMachine.MachineId">
+    <EditForm Model="updateConstructionMachine">
+        <div class="card">
+            <div class="column">
+                <div class="card-header text-center column">
+                    <img src="/images/ModelConstruction.png" />
+                    <div>Chỉnh sửa máy xây dựng</div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="form-group mt-3">
+                        <label class="form-label">Tên máy</label>
+                        <input type="text" @bind="updateConstructionMachine.Name" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Nhãn hiệu</label>
+                        <input type="text" @bind="updateConstructionMachine.Brand" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Số seri</label>
+                        <input type="text" @bind="updateConstructionMachine.SerialNumber" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Chiều dài</label>
+                        <div class="row">
+                            <div class="col-md-9" style="padding-right:0px">
+                                <input type="number" @bind="updateConstructionMachine.Length" class="form-control" />
+                            </div>
+                            <div class="col-md-3" style="padding-left:0px">
+                                <button class="btn btn-primary" disabled style="width: 100%;">mm</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Chiều rộng</label>
+                        <div class="row">
+                            <div class="col-md-9" style="padding-right:0px">
+                                <input type="number" @bind="updateConstructionMachine.Width" class="form-control" />
+                            </div>
+                            <div class="col-md-3" style="padding-left:0px">
+                                <button class="btn btn-primary" disabled style="width: 100%;">mm</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Chiều cao</label>
+                        <div class="row">
+                            <div class="col-md-9" style="padding-right:0px">
+                                <input type="number" @bind="updateConstructionMachine.Height" class="form-control" />
+                            </div>
+                            <div class="col-md-3" style="padding-left:0px">
+                                <button class="btn btn-primary" disabled style="width: 100%;">mm</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Cân nặng</label>
+                        <div class="row">
+                            <div class="col-md-9" style="padding-right:0px">
+                                <input type="number" @bind="updateConstructionMachine.Weight" class="form-control" />
+                            </div>
+                            <div class="col-md-3" style="padding-left:0px">
+                                <button class="btn btn-primary" disabled style="width: 100%;">kg</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer row">
+                    <div class="form-group col-md-6">
+                        <button class="btn btn-secondary ms-2" type="submit" @onclick="CloseDialog">Cancel</button>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <button style="max-width:100px" class="btn btn-primary float-end me-2" type="submit" @onclick="UpdateMachine">Chỉnh sửa</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</dialog>
+
+<button class="btn btn-outline-success" @onclick=OpenDialog>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
+    </svg>
+</button>
+
+@code {
+    [Parameter]
+    public EditConstructionMachineDTO updateConstructionMachine { get; set; } = new();
+    [Parameter]
+    public int CompanyId { get; set; }
+    [Parameter]
+    public EventCallback updatedMachine { get; set; }
+
+    async void OpenDialog()
+    {
+        await js.InvokeVoidAsync("OpenDialog", $"my-editdialog-{updateConstructionMachine.MachineId}");
+    }
+
+    async Task CloseDialog()
+    {
+        await js.InvokeVoidAsync("CloseDialog", $"my-editdialog-{updateConstructionMachine.MachineId}");
+    }
+
+    private async Task UpdateMachine()
+    {
+        await updateConstructionMachine.
+    }
+}
