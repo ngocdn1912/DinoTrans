@@ -43,7 +43,6 @@
     public List<Dictionary<string, string>> ListImanges { get; set; } = new();
     [Parameter]
     public int MachineId { get; set; }
-    public string FirstPicture { get; set; }
     public List<string> AllPictures { get; set; } = new();
     async Task OpenDialog()
     {
@@ -58,7 +57,6 @@
             {
                 AllPictures.Add(ListImanges[i][$"Image_{i}"]);
             }
-            FirstPicture = AllPictures.FirstOrDefault();
         }
     }
 

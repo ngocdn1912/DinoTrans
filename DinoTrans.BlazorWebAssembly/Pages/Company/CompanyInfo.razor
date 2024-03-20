@@ -8,10 +8,10 @@
     <br />
     <div class="card-body">
         <div class="col-md-12 row">
-            <div class="col-md-2">
+            <div class="col-md-4">
                 <img src="/images/CompanyDefault.png"/>
             </div>
-            <div class="col-md-10">
+            <div class="col-md-8">
                 <div class="row col-md-12" style="padding:5px;">
                     <div class="col-md-3">
                         Tên công ty
@@ -44,16 +44,55 @@
                         <input type="text" @bind="myCompany.PhoneNumber" disabled style="padding:5px; min-width:500px;" />
                     </div>
                 </div>
+                <div class="row col-md-12" style="padding:5px;">
+                    <div class="col-md-3">
+                        Vai trò
+                    </div>
+                    <div class="col-md-9">
+                        <input type="text" @bind="CompanyRole" disabled style="padding:5px; min-width:500px;" />
+                    </div>
+                </div>
+                @if (myCompany.Role == CompanyRoleEnum.Shipper)
+                {
+                    <div class="row col-md-12" style="padding:5px;">
+                        <div class="col-md-3">
+                            % Phí trung gian cho Admin
+                        </div>
+                        <div class="col-md-9">
+                            <input type="text" @bind="myCompany.ShipperFeePercentage" disabled style="padding:5px; min-width:500px;" />
+                        </div>
+                    </div>
+                }
+                @if (myCompany.Role == CompanyRoleEnum.Carrier)
+                {
+                    <div class="row col-md-12" style="padding:5px;">
+                        <div class="col-md-3">
+                            Vai trò
+                        </div>
+                        <div class="col-md-9">
+                            <input type="text" @bind="CompanyRole" disabled style="padding:5px; min-width:500px;" />
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
     <div class="card-footer">
-        <button class="btn btn-primary float-end">Chỉnh sửa</button>
+        <div class="float-end">
+            <UpdateCompany dto="dto" Finish="HandleFinish"></UpdateCompany>
+        </div>
     </div>
 </div>
 @code {
     public Company myCompany { get; set; } = new();
+    public string CompanyRole { get; set; } = "";
+    public UpdateCompanyDTO dto { get; set; } = new();
     protected override async Task OnInitializedAsync()
+    {
+        await GetCompany();
+    }
+
+    public async Task GetCompany()
     {
         var result = await CompanyService.GetCompanyById(new ApplicationUser
         {
@@ -61,9 +100,25 @@
             LastName = ""
         });
 
-        if(result.Success)
+        if (result.Success)
         {
             myCompany = result.Data;
+            if (myCompany.Role == CompanyRoleEnum.Admin)
+                CompanyRole = "Admin";
+            else if (myCompany.Role == CompanyRoleEnum.Shipper)
+                CompanyRole = "Công ty thuê vận chuyển";
+            else CompanyRole = "Công ty vận chuyển";
+
+            dto.Address = result.Data.Address;
+            dto.PhoneNumber = result.Data.PhoneNumber;
+            dto.CompanyName = result.Data.CompanyName;
+            dto.Email = result.Data.Email;
+            StateHasChanged();
         }
+    }
+
+    public async void HandleFinish()
+    {
+        await GetCompany();
     }
 }

@@ -1,0 +1,149 @@
+﻿@page "/CompanySettings/ConstructionMachines"
+@inject IConstructionMachineService ConstructionMachineServcie
+@inject AuthenticationStateProvider AuthenticationState
+
+<div class="card">
+    <div class="card-header">
+        <header>Thông tin máy xây dựng</header>
+    </div>
+    <div class="card-body">
+        <div class="col-md-12 row mt-1 mb-2">
+            <div class="col-md-8">
+                <input type="text" class="form-control" value="@searchText"
+                       @onchange="@((ChangeEventArgs e) => ChangeText(e))"
+                       placeholder="Tìm kiếm máy xây dựng..." />
+
+            </div>
+            <div class="col-md-2"></div>
+            <div class="col-md-2 p-0">
+                <NewConstructionMachineDialog IsDefaultEvent="IsDefaultEvent" CallDefaultEvent="HandleDefaultEvent" addedmachine="recallAPI" CompanyId="CompanyId"></NewConstructionMachineDialog>
+            </div>
+        </div>
+        <table class="table" style="">
+            <thead>
+                <tr>
+                    <th>Ảnh</th>
+                    <th>Tên</th>
+                    <th>Thương hiệu</th>
+                    <th>Số sêri</th>
+                    <th>Chiều dài(mm)</th>
+                    <th>Chiều rộng(mm)</th>
+                    <th>Chiều cao(mm)</th>
+                    <th>Trọng lượng(kg)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Data)
+                {
+                    <tr>
+                        @{
+                            var listImages = JsonConvert.DeserializeObject<List<Dictionary<string, string>>>(item.Image!);
+                        }
+                        <td>
+                            <ViewAllConstructionMachinePictures MachineId="@item.Id" ListImanges="listImages"></ViewAllConstructionMachinePictures>
+                        </td>
+                        <td>@item.Name</td>
+                        <td>@item.Brand</td>
+                        <td>@item.SerialNumber</td>
+                        <td>@item.Length</td>
+                        <td>@item.Width</td>
+                        <td>@item.Height</td>
+                        <td>@item.Weight</td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <div class="float-end">
+            <Pagination ActivePageNumber="@currentPageNumber"
+                        TotalPages="TotalPage"
+                        DisplayPages="2"
+                        FirstLinkIcon="IconName.ChevronDoubleLeft"
+                        PreviousLinkIcon="IconName.ChevronLeft"
+                        NextLinkIcon="IconName.ChevronRight"
+                        LastLinkIcon="IconName.ChevronDoubleRight"
+                        PageChanged="OnPageChangedAsync" />
+        </div>
+    </div>
+</div>
+@code {
+    public int TotalPage { get; set; } = 1;
+    [Parameter]
+    public int CompanyId { get; set; }
+    public bool IsDefaultEvent { get; set; } = true;
+    public int currentPageNumber { get; set; }
+    public string searchText { get; set; } = "";
+    public List<ContructionMachine> Data = new();
+    public AuthenticationState? authState = null;
+    protected override async Task OnInitializedAsync()
+    {
+        var customState = (CustomAuthenticationStateProvider)AuthenticationState;
+        authState = await customState.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            var companyId = int.Parse(authState.User.FindFirstValue("CompanyId"));
+            CompanyId = companyId;
+        }
+        var result = await ConstructionMachineServcie.GetMachinesByCurrentShipperId(new SearchLoadDTO
+        {
+            pageIndex = 1,
+            pageSize = 10,
+            SearchText = ""
+        },
+        new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
+        if(result.Success)
+        {
+            Data = result.Data;
+            TotalPage = result.PageCount;
+        }
+    }
+    private async Task CallSearch()
+    {
+        var result = await ConstructionMachineServcie.GetMachinesByCurrentShipperId(new SearchLoadDTO
+        {
+            pageIndex = currentPageNumber,
+            pageSize = 10,
+            SearchText = searchText
+        },
+        new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
+        if(result.Success)
+        {
+            Data = result.Data;
+            TotalPage = result.PageCount;
+        }
+    }
+    private async Task HandleDefaultEvent(bool IsDefault)
+    {
+        IsDefaultEvent = IsDefault;
+    }
+    private async Task recallAPI()
+    {
+        currentPageNumber = 1;
+        await CallSearch();
+    }
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        await Task.Run(() => { currentPageNumber = newPageNumber; });
+        await CallSearch();
+    }
+    private async Task ChangeText(ChangeEventArgs e)
+    {
+        searchText = e?.Value.ToString();
+        IsDefaultEvent = true;
+        currentPageNumber = 1;
+        await CallSearch();
+    }
+}

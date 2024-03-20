@@ -174,7 +174,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var loadsAvailable = _constructionMachineRepository
                 .AsNoTracking()
-                .Where(c => (dto.SearchText.IsNullOrEmpty() || c.Name.Contains(dto.SearchText!)) && !listLoadsInUse.Contains(c.Id));
+                .Where(c => (dto.SearchText.IsNullOrEmpty() || c.Name.Contains(dto.SearchText!)) 
+                && !listLoadsInUse.Contains(c.Id)
+                && c.CompanyShipperId == tender.CompanyShipperId);
 
             var data = await loadsAvailable
                 .Skip((dto.pageIndex - 1) * dto.pageSize)
@@ -237,6 +239,23 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     contructionMachines = data
                 },
                 Success = true
+            };
+        }
+
+        public async Task<ResponseModel<List<ContructionMachine>>> GetMachinesByCurrentShipperId(SearchLoadDTO dto, ApplicationUser applicationUser)
+        {
+            var machines = await _constructionMachineRepository
+                .AsNoTracking()
+                .Where(c => c.CompanyShipperId == applicationUser.CompanyId
+                && (dto.SearchText.IsNullOrEmpty() || c.Name.Contains(dto.SearchText!))).ToListAsync();
+
+            var machinesPaging = machines.Skip((dto.pageIndex - 1) * dto.pageSize).Take(dto.pageSize).ToList();
+            return new ResponseModel<List<ContructionMachine>>
+            {
+                Data = machinesPaging,
+                Success = true,
+                Total = machines.Count(),
+                PageCount = machines.Count()/5 + 1            
             };
         }
     }

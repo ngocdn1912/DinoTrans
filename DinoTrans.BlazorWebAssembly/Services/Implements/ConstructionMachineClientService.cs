@@ -1,4 +1,5 @@
 ﻿using Blazored.LocalStorage;
+using DinoTrans.BlazorWebAssembly.Pages.Tender;
 using DinoTrans.Shared.DTOs;
 using DinoTrans.Shared.DTOs.ContructionMachine;
 using DinoTrans.Shared.DTOs.SearchDTO;
@@ -85,6 +86,26 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var response = await _httpClient
                 .GetAsync($"{BaseUrl}/GetMachinesForTenderOverviewByIds?TenderId={TenderId}");
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new ResponseModel<List<ContructionMachine>>
+                {
+                    Success = false,
+                    Message = "Can't search construction machine"
+                };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<List<ContructionMachine>>>(apiResponse);
+        }
+
+        public async Task<ResponseModel<List<ContructionMachine>>> GetMachinesByCurrentShipperId(SearchLoadDTO dto, ApplicationUser applicationUser)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .PostAsync($"{BaseUrl}/GetMachinesByCurrentShipperId",
+                Generics.GenerateStringContent(Generics.SerializeObj(dto)));
 
             // Đọc phản hồi từ API
             if (!response.IsSuccessStatusCode)

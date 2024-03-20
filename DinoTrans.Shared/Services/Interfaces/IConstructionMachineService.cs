@@ -17,5 +17,6 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<ResponseModel<SearchConstructionMachineDTO>> SearchConstructionMachineForTender(SearchLoadForTenderDTO dto);
         Task<ResponseModel<SearchConstructionMachineDTO>> SearchConstructionMachine(SearchLoadDTO dto);
         Task<ResponseModel<List<ContructionMachine>>> GetMachinesForTenderOverviewByIds(int TenderId);
+        Task<ResponseModel<List<ContructionMachine>>> GetMachinesByCurrentShipperId(SearchLoadDTO dto, ApplicationUser applicationUser);
     }
 }
