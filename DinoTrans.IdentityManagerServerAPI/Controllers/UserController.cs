@@ -1,8 +1,11 @@
 ﻿using DinoTrans.Shared.DTOs;
+using DinoTrans.Shared.Entities;
 using DinoTrans.Shared.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Security.Principal;
 
 namespace DinoTrans.IdentityManagerServerAPI.Controllers
 {
@@ -11,9 +14,23 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ApplicationUser _currentUser;
+        public UserController(IUserService userService, IHttpContextAccessor contextAccessor)
         {
             _userService = userService;
+            _contextAccessor = contextAccessor;
+            var context = _contextAccessor.HttpContext.User.Identity as ClaimsIdentity;
+            if (context != null)
+            {
+                var userIdParse = int.TryParse(context!.FindFirst(ClaimTypes.NameIdentifier).Value, out int userId);
+                if (userIdParse)
+                {
+                    var user = _userService.GetUserById(userId);
+                    if (user != null)
+                        _currentUser = user.Data;
+                }
+            }
         }
 
         [HttpPost]
@@ -67,5 +84,11 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             return Ok(response);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto)
+        {
+            var response = await _userService.CreateAccountForUserOfCompany(dto, _currentUser);
+            return Ok(response);
+        }
     }
 }

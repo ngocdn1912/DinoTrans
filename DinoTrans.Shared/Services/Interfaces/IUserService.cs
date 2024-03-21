@@ -22,5 +22,7 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<ResponseModel<CompanyRoleEnum>> GetCompanyRole(int CompanyId);
         ResponseModel<ApplicationUser> GetUserById(int UserId);
         Task<ResponseModel<ApplicationUser>> GetUserByIdAsync(int UserId);
+        Task<GeneralResponse> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin);
+        Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(ApplicationUser _currentCompanyShipperAdmin);
     }
 }

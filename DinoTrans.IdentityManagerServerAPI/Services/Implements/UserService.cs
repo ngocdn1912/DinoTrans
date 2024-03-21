@@ -339,5 +339,77 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 Success = true
             };
         }
+
+        public async Task<GeneralResponse> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin)
+        {
+            // Kiểm tra xem công ty đã tồn tại trong cơ sở dữ liệu chưa
+            var existingCompany = _companyRepository
+                .AsNoTracking()
+                .FirstOrDefault(c => c.Id == _currentCompanyShipperAdmin.CompanyId);
+
+            if (existingCompany == null)
+            {
+                _unitOfWork.Rollback();
+                return new GeneralResponse(false, "Không tìm thấy công ty để tạo tài khoản");
+            }
+
+            // Thêm người dùng mới
+            var newUser = new ApplicationUser()
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                PasswordHash = dto.Password,
+                CompanyId = _currentCompanyShipperAdmin.CompanyId
+            };
+
+            // Kiểm tra xem người dùng đã đăng ký trước đó chưa
+            var user = await _userManager.FindByEmailAsync(newUser.Email);
+            if (user is not null) return new GeneralResponse(false, "Tài khoản đã được đăng ký");
+
+            var createUser = await _userManager.CreateAsync(newUser!, dto.Password);
+            if (!createUser.Succeeded)
+            {
+                _unitOfWork.Rollback();
+                var allErrors = "";
+                foreach (var item in createUser.Errors)
+                {
+                    allErrors += item.Description.ToString() + " ";
+                }
+                return new GeneralResponse(false, allErrors);
+            }
+
+            // Thêm vai trò cho người dùng
+            var findRole = await _roleManager.FindByNameAsync(Role.User);
+            if (findRole is null)
+            {
+                _unitOfWork.Rollback();
+                return new GeneralResponse(false, "Role name doesn't exist");
+            }
+            /*if (findRole.Name != Role.CompanyAdministrator)
+            {
+                return new GeneralResponse(false, "Forbidden");
+            }*/
+            await _userManager.AddToRoleAsync(newUser, Role.User);
+
+            _unitOfWork.SaveChanges();
+            _unitOfWork.Commit();
+            return new GeneralResponse(true, "Đăng ký tài khoản cho nhân viên thành công");
+        }
+
+        public async Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(ApplicationUser _currentCompanyShipperAdmin)
+        {
+            var employees = await _userRepository
+                .AsNoTracking()
+                .Where(u => u.CompanyId ==  _currentCompanyShipperAdmin.CompanyId)
+                .ToListAsync();
+
+            if(employees == null)
+            {
+                return new ResponseModel<List<GetEmployeeOfACompany>>
+                {
+
+                };
+            }
+        }
     }
 }
