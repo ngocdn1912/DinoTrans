@@ -22,6 +22,7 @@ namespace DinoTrans.Shared.Entities
         public float Width { get; set; }
         public float Height { get; set; }
         public float Weight { get; set; }
+        public bool IsDeleted { get; set; }
         [NotMapped]
         public List<Dictionary<string,string>> ImageDeserializeJson
         {

@@ -12,7 +12,6 @@ namespace DinoTrans.Shared.DTOs.ContructionMachine
         public string Name { get; set; }
         public string Brand { get; set; }
         public string SerialNumber { get;set; }
-        public string Image { get;set; }
         public float Length { get;set; }
         public float Width { get;set; }
         public float Height { get;set; }

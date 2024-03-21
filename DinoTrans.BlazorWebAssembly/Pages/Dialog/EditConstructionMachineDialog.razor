@@ -98,8 +98,6 @@
     [Parameter]
     public EditConstructionMachineDTO updateConstructionMachine { get; set; } = new();
     [Parameter]
-    public int CompanyId { get; set; }
-    [Parameter]
     public EventCallback updatedMachine { get; set; }
 
     async void OpenDialog()
@@ -114,6 +112,13 @@
 
     private async Task UpdateMachine()
     {
-        await updateConstructionMachine.
+        var result = await ConstructionMachineService.EditConstructionMachine(updateConstructionMachine, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+        await js.InvokeVoidAsync("alert", result.Message);
+        await CloseDialog();
+        await updatedMachine.InvokeAsync();
     }
 }

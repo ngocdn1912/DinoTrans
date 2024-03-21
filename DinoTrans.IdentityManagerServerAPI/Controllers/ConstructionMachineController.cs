@@ -74,7 +74,13 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> EditConstructionMachine(EditConstructionMachineDTO dto)
         {
-            var result = await _constructionMachineService.EditConstructionMachine(dto);
+            var result = await _constructionMachineService.EditConstructionMachine(dto, _currentUser);
+            return Ok(result);
+        }
+        [HttpDelete]
+        public async Task<IActionResult> DeleteConstructionMachine([FromQuery] int MachineId)
+        {
+            var result = await _constructionMachineService.DeleteConstructionMachine(MachineId, _currentUser);
             return Ok(result);
         }
     }

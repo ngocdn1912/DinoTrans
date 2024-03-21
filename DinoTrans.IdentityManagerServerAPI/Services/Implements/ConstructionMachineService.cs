@@ -174,9 +174,10 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var loadsAvailable = _constructionMachineRepository
                 .AsNoTracking()
-                .Where(c => (dto.SearchText.IsNullOrEmpty() || c.Name.Contains(dto.SearchText!)) 
+                .Where(c => (dto.SearchText.IsNullOrEmpty() || c.Name.Contains(dto.SearchText!))
                 && !listLoadsInUse.Contains(c.Id)
-                && c.CompanyShipperId == tender.CompanyShipperId);
+                && c.CompanyShipperId == tender.CompanyShipperId
+                && c.IsDeleted == false) ;
 
             var data = await loadsAvailable
                 .Skip((dto.pageIndex - 1) * dto.pageSize)
@@ -247,6 +248,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             var machines = await _constructionMachineRepository
                 .AsNoTracking()
                 .Where(c => c.CompanyShipperId == applicationUser.CompanyId
+                && c.IsDeleted == false
                 && (dto.SearchText.IsNullOrEmpty() || c.Name.Contains(dto.SearchText!))).ToListAsync();
 
             var machinesPaging = machines.Skip((dto.pageIndex - 1) * dto.pageSize).Take(dto.pageSize).ToList();
@@ -259,7 +261,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             };
         }
 
-        public async Task<GeneralResponse> EditConstructionMachine(EditConstructionMachineDTO dto)
+        public async Task<GeneralResponse> EditConstructionMachine(EditConstructionMachineDTO dto, ApplicationUser user)
         {
             var machine = await _constructionMachineRepository
                 .AsNoTracking()
@@ -269,7 +271,23 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             if(machine == null)
             {
                 return new GeneralResponse(false, "Không tìm thấy máy");
-            }    
+            }
+
+            var tenderInProgress = await _tenderRepository
+                .AsNoTracking()
+                .Where(t => (t.TenderStatus == TenderStatuses.Active
+                || t.TenderStatus == TenderStatuses.InExcecution)
+                && t.CompanyShipperId == user.CompanyId)
+                .ToListAsync();
+
+            var tenderConstructionMachineInProgress = await _tenderConstructionMachineRepository
+                .AsNoTracking()
+                .Where(tc => tenderInProgress.Select(t => t.Id).Contains(tc.TenderId))
+                .Select(m => m.ContructionMachineId)
+                .ToListAsync();
+
+            var isExist = tenderConstructionMachineInProgress.Contains(machine.Id);
+            if(isExist) return new GeneralResponse(false, "Máy đang trong quá trình sử dụng, không thể chỉnh sửa");
 
             machine.Name = dto.Name;
             machine.Brand = dto.Brand;
@@ -281,6 +299,40 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _constructionMachineRepository.Update(machine);
             _constructionMachineRepository.SaveChange();
             return new GeneralResponse(true, "Cập nhật thành công");
+        }
+
+        public async Task<GeneralResponse> DeleteConstructionMachine(int ConstructionMachineId, ApplicationUser user)
+        {
+            var machine = await _constructionMachineRepository
+                .AsNoTracking()
+                .Where(c => c.Id == ConstructionMachineId)
+                .FirstOrDefaultAsync();
+
+            if (machine == null)
+            {
+                return new GeneralResponse(false, "Không tìm thấy máy");
+            }
+
+            var tenderInProgress = await _tenderRepository
+                .AsNoTracking()
+                .Where(t => (t.TenderStatus == TenderStatuses.Active
+                || t.TenderStatus == TenderStatuses.InExcecution)
+                && t.CompanyShipperId == user.CompanyId)
+                .ToListAsync();
+
+            var tenderConstructionMachineInProgress = await _tenderConstructionMachineRepository
+                .AsNoTracking()
+                .Where(tc => tenderInProgress.Select(t => t.Id).Contains(tc.TenderId))
+                .Select(m => m.ContructionMachineId)
+                .ToListAsync();
+
+            var isExist = tenderConstructionMachineInProgress.Contains(machine.Id);
+            if (isExist) return new GeneralResponse(false, "Máy đang trong quá trình sử dụng, không thể xóa");
+
+            machine.IsDeleted = true;
+            _constructionMachineRepository.Update(machine);
+            _constructionMachineRepository.SaveChange();
+            return new GeneralResponse(true, "Xóa thành công");
         }
     }
 }

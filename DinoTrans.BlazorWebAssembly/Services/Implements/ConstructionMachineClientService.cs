@@ -35,7 +35,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
             // Đọc phản hồi từ API
             if (!response.IsSuccessStatusCode)
-                return new GeneralResponse(true, "Tạo mới máy thành công");
+                return new GeneralResponse(true, "Có lỗi xảy ra");
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
@@ -54,7 +54,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             return new ResponseModel<SearchConstructionMachineDTO>
             {
                 Success = false,
-                Message = "Can't search construction machine"
+                Message = "Có lỗi xảy ra"
             };
 
             var apiResponse = await response.Content.ReadAsStringAsync();
@@ -73,7 +73,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
                 return new ResponseModel<SearchConstructionMachineDTO>
                 {
                     Success = false,
-                    Message = "Can't search construction machine"
+                    Message = "Có lỗi xảy ra"
                 };
 
             var apiResponse = await response.Content.ReadAsStringAsync();
@@ -93,7 +93,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
                 return new ResponseModel<List<ContructionMachine>>
                 {
                     Success = false,
-                    Message = "Can't search construction machine"
+                    Message = "Có lỗi xảy ra"
                 };
 
             var apiResponse = await response.Content.ReadAsStringAsync();
@@ -113,14 +113,14 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
                 return new ResponseModel<List<ContructionMachine>>
                 {
                     Success = false,
-                    Message = "Can't search construction machine"
+                    Message = "Có lỗi xảy ra"
                 };
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<ResponseModel<List<ContructionMachine>>>(apiResponse);
         }
 
-        public async Task<GeneralResponse> EditConstructionMachine(EditConstructionMachineDTO dto)
+        public async Task<GeneralResponse> EditConstructionMachine(EditConstructionMachineDTO dto, ApplicationUser user)
         {
             string token = await _localStorageService.GetItemAsStringAsync("token");
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -130,7 +130,22 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
             // Đọc phản hồi từ API
             if (!response.IsSuccessStatusCode)
-                return new GeneralResponse(false, "Can't search construction machine");
+                return new GeneralResponse(false, "Có lỗi xảy ra");
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
+        }
+
+        public async Task<GeneralResponse> DeleteConstructionMachine(int ConstructionMachineId, ApplicationUser user)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .DeleteAsync($"{BaseUrl}/DeleteConstructionMachine?MachineId={ConstructionMachineId}");
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new GeneralResponse(false, "Có lỗi xảy ra");
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
