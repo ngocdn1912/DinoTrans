@@ -1,0 +1,84 @@
+﻿@inject IJSRuntime js
+@inject IUserService UserService
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Hosting
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:500px" id="create-employee">
+    <EditForm Model="User">
+        <div class="card">
+            <div class="column">
+                <div class="card-header text-center column">
+                    <img src="/images/UserIconImage.jpg" style="max-width:200px; max-height:200px;"/>
+                    <div>Tạo mới nhân viên</div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="form-group mt-3">
+                        <label class="form-label">Tên nhân viên</label>
+                        <input type="text" @bind="User.FirstName" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Họ nhân viên</label>
+                        <input type="text" @bind="User.LastName" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Email/Tên đăng nhập</label>
+                        <input type="text" @bind="User.Email" class="form-control" />
+                    </div>
+                </div>
+                    
+                <div class="card-footer row">
+                    <div class="form-group col-md-6">
+                        <button class="btn btn-secondary ms-2" type="submit" @onclick="Close">Cancel</button>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <button style="max-width:100px" class="btn btn-primary float-end me-2" type="submit" @onclick="CreateUser">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</dialog>
+
+<button style="min-width:fit-content; max-width:fit-content" class="float-end btn btn-primary" @onclick="OpenDialog">
+    + Tạo mới nhân viên
+</button>
+
+@code {
+    public CreateAccountForUserOfCompany User { get; set; } = new();
+    [Parameter]
+    public EventCallback FinishAdd { get; set; } = new();
+    async void Close()
+    {
+        User = new();
+        await js.InvokeVoidAsync("CloseDialog", "create-employee");
+    }
+
+    async Task OpenDialog()
+    {
+        //if (IsDefaultEvent == true)
+        //{
+        //    IsDefaultEvent = false;
+        //    await CallDefaultEvent.InvokeAsync(IsDefaultEvent);
+        //    return;
+        //}
+        await js.InvokeVoidAsync("OpenDialog", "create-employee");
+    }
+
+    private async Task CreateUser()
+    {
+        var result = await UserService.CreateAccountForUserOfCompany(User, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
+        await js.InvokeVoidAsync("alert", result.Message);
+        if(result.Flag)
+        {
+            Close();
+            await FinishAdd.InvokeAsync();
+        }
+    }
+}

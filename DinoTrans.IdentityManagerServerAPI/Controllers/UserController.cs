@@ -1,4 +1,5 @@
 ﻿using DinoTrans.Shared.DTOs;
+using DinoTrans.Shared.DTOs.SearchDTO;
 using DinoTrans.Shared.Entities;
 using DinoTrans.Shared.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +22,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             _userService = userService;
             _contextAccessor = contextAccessor;
             var context = _contextAccessor.HttpContext.User.Identity as ClaimsIdentity;
-            if (context != null)
+            if (context.IsAuthenticated)
             {
                 var userIdParse = int.TryParse(context!.FindFirst(ClaimTypes.NameIdentifier).Value, out int userId);
                 if (userIdParse)
@@ -88,6 +89,13 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         public async Task<IActionResult> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto)
         {
             var response = await _userService.CreateAccountForUserOfCompany(dto, _currentUser);
+            return Ok(response);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GetAllEmployeesOfACompany(SearchModel dto)
+        {
+            var response = await _userService.GetAllEmployeesOfACompany(dto, _currentUser);
             return Ok(response);
         }
     }

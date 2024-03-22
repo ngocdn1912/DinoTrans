@@ -1,0 +1,115 @@
+﻿@page "/CompanySettings/Employees"
+@inject IUserService UserService
+<header>Thông tin máy xây dựng</header>
+<hr />
+<div class="col-md-12 row mt-1 mb-2">
+    <div class="col-md-8">
+        <input type="text" class="form-control" value="@searchText"
+               @onchange="@((ChangeEventArgs e) => ChangeText(e))"
+               placeholder="Tìm kiếm nhân viên theo tên..." />
+
+    </div>
+    <div class="col-md-2"></div>
+    <div class="col-md-2 p-0">
+        <NewUserDialog FinishAdd="recallAPI"></NewUserDialog>
+    </div>
+</div>
+<table class="table" style="">
+    <thead>
+        <tr>
+            <th>Tên</th>
+            <th>Họ</th>
+            <th>Số điện thoại</th>
+            <th>Địa chỉ</th>
+            <th>Địa chỉ email</th>
+            <th>Vai trò</th>
+            <th>Hành động</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in listEmployees!)
+        {
+            <tr>
+                <td>@item.FirstName</td>
+                <td>@item.LastName</td>
+                <td>@item.PhoneNumber</td>
+                <td>@item.Address</td>
+                <td>@item.Email</td>
+                <td>@item.Role</td>
+                <td></td>
+                <td></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="float-end">
+    <Pagination ActivePageNumber="@currentPageNumber"
+                TotalPages="TotalPage"
+                DisplayPages="2"
+                FirstLinkIcon="IconName.ChevronDoubleLeft"
+                PreviousLinkIcon="IconName.ChevronLeft"
+                NextLinkIcon="IconName.ChevronRight"
+                LastLinkIcon="IconName.ChevronDoubleRight"
+                PageChanged="OnPageChangedAsync" />
+</div>
+@code {
+    public int currentPageNumber { get; set; } = 1;
+    public int TotalPage { get; set; }
+    public string searchText { get; set; } = "";
+    public List<GetEmployeeOfACompany> listEmployees { get; set; } = new();
+    protected override async Task OnInitializedAsync()
+    {
+        var searchModel = new SearchModel
+        {
+            SearchText = "",
+            pageIndex = 1,
+            pageSize = 10
+        };
+        var result = await UserService.GetAllEmployeesOfACompany(searchModel, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
+        if(result.Success)
+        {
+            TotalPage = result.PageCount;
+            listEmployees = result.Data;
+        }
+    }
+
+    private async Task recallAPI()
+    {
+        var searchModel = new SearchModel
+        {
+            SearchText = searchText,
+            pageIndex = currentPageNumber,
+            pageSize = 10
+        };
+        var result = await UserService.GetAllEmployeesOfACompany(searchModel, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
+        if (result.Success)
+        {
+            TotalPage = result.PageCount;
+            listEmployees = result.Data;
+        }
+    }
+    private async Task OnPageChangedAsync(int newPageNumber)
+    {
+        currentPageNumber = newPageNumber;
+        await recallAPI();
+    }
+
+    private async Task ChangeText(ChangeEventArgs e)
+    {
+        currentPageNumber = 1;
+        searchText = e?.Value.ToString();
+        await recallAPI();
+    }
+}

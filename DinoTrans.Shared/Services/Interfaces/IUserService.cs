@@ -1,5 +1,6 @@
 ﻿using DinoTrans.Shared.Contracts;
 using DinoTrans.Shared.DTOs;
+using DinoTrans.Shared.DTOs.SearchDTO;
 using DinoTrans.Shared.DTOs.TenderSteps;
 using DinoTrans.Shared.DTOs.UserResponse;
 using DinoTrans.Shared.Entities;
@@ -14,6 +15,7 @@ namespace DinoTrans.Shared.Services.Interfaces
 {
     public interface IUserService
     {
+        Task<string> GetUserRole(int userId); 
         Task<GeneralResponse> CreateAccount(UserDTO userDTO);
         Task<LoginResponse> LoginAccount(LoginDTO loginDTO);
         Task<ResponseModel<UserInfoResponseDTO>> GetAllUserInfo(GetAllUserInfoDTO userInfo);
@@ -23,6 +25,7 @@ namespace DinoTrans.Shared.Services.Interfaces
         ResponseModel<ApplicationUser> GetUserById(int UserId);
         Task<ResponseModel<ApplicationUser>> GetUserByIdAsync(int UserId);
         Task<GeneralResponse> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin);
-        Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(ApplicationUser _currentCompanyShipperAdmin);
+        Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(SearchModel dto, ApplicationUser _currentCompanyShipperAdmin);
+        Task<ResponseModel<GetEmployeeOfACompany>> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin);
     }
 }

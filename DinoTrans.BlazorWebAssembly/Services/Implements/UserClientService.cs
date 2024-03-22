@@ -8,6 +8,7 @@ using AutoMapper.Configuration;
 using DinoTrans.Shared.Contracts;
 using DinoTrans.Shared.Entities;
 using System.ComponentModel.Design;
+using DinoTrans.Shared.DTOs.SearchDTO;
 
 namespace DinoTrans.BlazorWebAssembly.Services.Implements
 {
@@ -150,6 +151,40 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
         public ResponseModel<ApplicationUser> GetUserById(int UserId)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<GeneralResponse> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .PostAsync($"{BaseUrl}/CreateAccountForUserOfCompany",
+                Generics.GenerateStringContent(Generics.SerializeObj(dto)));
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return new GeneralResponse(false, "Internal server error");
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
+        }
+
+        public async Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(SearchModel dto, ApplicationUser _currentCompanyShipperAdmin)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .PostAsync($"{BaseUrl}/GetAllEmployeesOfACompany",
+                Generics.GenerateStringContent(Generics.SerializeObj(dto)));
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return new ResponseModel<List<GetEmployeeOfACompany>>
+            {
+                Success = false,
+                Message = "Internal server error"
+            };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<List<GetEmployeeOfACompany>>>(apiResponse);
         }
     }
 }

@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Text;
 using static DinoTrans.Shared.DTOs.ServiceResponses;
 using Microsoft.EntityFrameworkCore;
+using DinoTrans.Shared.DTOs.SearchDTO;
 
 namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 {
@@ -359,7 +360,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 PasswordHash = dto.Password,
-                CompanyId = _currentCompanyShipperAdmin.CompanyId
+                CompanyId = _currentCompanyShipperAdmin.CompanyId,
+                Email = dto.Email,
+                UserName = dto.UserName
             };
 
             // Kiểm tra xem người dùng đã đăng ký trước đó chưa
@@ -396,20 +399,102 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             return new GeneralResponse(true, "Đăng ký tài khoản cho nhân viên thành công");
         }
 
-        public async Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(ApplicationUser _currentCompanyShipperAdmin)
+        public async Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(SearchModel dto, ApplicationUser _currentCompanyShipperAdmin)
         {
             var employees = await _userRepository
                 .AsNoTracking()
                 .Where(u => u.CompanyId ==  _currentCompanyShipperAdmin.CompanyId)
                 .ToListAsync();
 
-            if(employees == null)
+            if (employees == null)
             {
                 return new ResponseModel<List<GetEmployeeOfACompany>>
                 {
-
+                    Success = false,
+                    Message = "Không thể tìm kiếm nhân viên"
                 };
             }
+
+            var employeeRoles = await _userRoleRepository
+                .AsNoTracking()
+                .Where(ur => employees.Select(e => e.Id).Contains(ur.UserId))
+                .ToListAsync();
+
+            var roles = await _roleRepository
+                .AsNoTracking()
+                .ToListAsync();
+
+            var data = new List<GetEmployeeOfACompany>();
+            foreach (var item in employees)
+            {
+                var employeeRoleId = employeeRoles.Where(er => er.UserId == item.Id).Select(er => er.RoleId).FirstOrDefault();
+                var role = roles.Where(r => r.Id == employeeRoleId).Select(r => r.Name).FirstOrDefault();
+                data.Add(new GetEmployeeOfACompany
+                {
+                    FirstName = item.FirstName,
+                    LastName = item.LastName,
+                    PhoneNumber = item.PhoneNumber,
+                    Address = item.Address,
+                    Email = item.Email,
+                    Role = role!
+                });
+            }
+
+            data = data.Where(d => dto.SearchText.IsNullOrEmpty() ||
+            d.FirstName.Normalize().ToLower().Trim().Contains(dto.SearchText!.Normalize().ToLower().Trim())
+            || d.LastName.Normalize().ToLower().Trim().Contains(dto.SearchText!.Normalize().ToLower().Trim()))
+                .Skip((dto.pageIndex - 1) * dto.pageSize)
+                .Take(dto.pageSize)
+                .ToList();
+
+            return new ResponseModel<List<GetEmployeeOfACompany>>
+            {
+                Data = data,
+                Success = true,
+                PageCount = employees.Count() / 10 + 1
+            };
+        }
+
+        public async Task<ResponseModel<GetEmployeeOfACompany>> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin)
+        {
+            var user = await _userRepository
+                .AsNoTracking()
+                .Where(u => u.Id == dto.Id)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return new ResponseModel<GetEmployeeOfACompany>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy nhân viên"
+                };
+            }
+
+            user.FirstName = dto.FirstName;
+            user.LastName = dto.LastName;
+
+        }
+
+        public async Task<string> GetUserRole(int userId)
+        {
+
+            var userRole = await _userRoleRepository
+                .AsNoTracking()
+                .Where(ur => ur.UserId == userId)
+                .FirstOrDefaultAsync();
+
+            if(userRole == null)
+            {
+                return null;
+            }
+
+            var role = await _roleRepository
+                .AsNoTracking()
+                .Where(r => r.Id == userRole.RoleId)
+                .FirstOrDefaultAsync();
+
+            return role!.ToString();
         }
     }
 }
