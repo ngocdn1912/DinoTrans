@@ -462,12 +462,10 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             try
             {
                 _unitOfWork.BeginTransaction();
-                var user = await _userRepository
-                    .AsNoTracking()
-                    .Where(u => u.Id == dto.Id)
-                    .FirstOrDefaultAsync();
 
-                if (user == null)
+                var getUser = await _userManager.FindByIdAsync(dto.Id.ToString());
+
+                if (getUser == null)
                 {
                     _unitOfWork.Rollback();
                     return new GeneralResponse(false, "Không tìm thấy nhân viên");
@@ -479,23 +477,27 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     return new GeneralResponse(false, "Xác nhận mật khẩu không chính xác");
                 }
 
-                user.FirstName = dto.FirstName;
-                user.LastName = dto.LastName;
-                user.PhoneNumber = dto.PhoneNumber != null ? dto.PhoneNumber : user.PhoneNumber;
-                user.Address = dto.Address != null ? dto.Address : user.Address;
-                if(!dto.ConfirmPassword.IsNullOrEmpty() && !dto.NewPassword.IsNullOrEmpty() && !dto.OldPassword.IsNullOrEmpty()) 
+                getUser.FirstName = dto.FirstName;
+                getUser.LastName = dto.LastName;
+                getUser.PhoneNumber = dto.PhoneNumber != null ? dto.PhoneNumber : getUser.PhoneNumber;
+                getUser.Address = dto.Address != null ? dto.Address : getUser.Address;
+                if (!dto.ConfirmPassword.IsNullOrEmpty() && !dto.NewPassword.IsNullOrEmpty() && !dto.OldPassword.IsNullOrEmpty()) 
                 {
-                    user.PasswordHash = dto.ConfirmPassword;
-                    var result = await _userManager.ChangePasswordAsync(user, dto.NewPassword, dto.NewPassword);
+                    bool checkUserPasswords = await _userManager.CheckPasswordAsync(getUser, dto.OldPassword);
+                    if (!checkUserPasswords)
+                    {
+                        return new GeneralResponse(false, "Mật khẩu cũ bị sai");
+                    }
+                    var result = await _userManager.ChangePasswordAsync(getUser, dto.OldPassword, dto.NewPassword);
                     if (!result.Succeeded)
                     {
-                        string errors = "";
+                        _unitOfWork.Rollback();
+                        var errors = "";
                         foreach (var itemError in result.Errors)
                         {
                             errors += itemError.Description.ToString() + "\n";
                         }
-                        _unitOfWork.Rollback();
-                        return new GeneralResponse(false, "Lỗi update mật khẩu");
+                        return new GeneralResponse(false, errors);
                     }
                 }               
                 _unitOfWork.SaveChanges();
@@ -533,6 +535,23 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         public async Task<string> GetCurrentUserRole(ApplicationUser user)
         {
             return await GetUserRole(user.Id);
+        }
+
+        public async Task<GeneralResponse> DeleteUserAccount(int UserId)
+        {
+            var user = await _userRepository
+                .AsNoTracking()
+                .Where(u => u.Id == UserId)
+                .FirstOrDefaultAsync();
+
+            if(user == null)
+            {
+                return new GeneralResponse(false, "Không tồn tại nhân viên để xóa");
+            }    
+
+            _userRepository.Delete(user);
+            _userRepository.SaveChange();
+            return new GeneralResponse(true, "Xóa nhân viên thành công");
         }
     }
 }

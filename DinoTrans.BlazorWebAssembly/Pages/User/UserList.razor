@@ -1,5 +1,7 @@
 ﻿@page "/CompanySettings/Employees"
 @inject IUserService UserService
+@inject AuthenticationStateProvider AuthenticationState
+
 <header>Thông tin máy xây dựng</header>
 <hr />
 <div class="col-md-12 row mt-1 mb-2">
@@ -10,9 +12,12 @@
 
     </div>
     <div class="col-md-2"></div>
-    <div class="col-md-2 p-0">
-        <NewUserDialog FinishAdd="recallAPI"></NewUserDialog>
-    </div>
+    @if (@GetCurrentUser == Role.CompanyAdministrator)
+    {
+        <div class="col-md-2 p-0">
+            <NewUserDialog FinishAdd="recallAPI"></NewUserDialog>
+        </div>
+    }
 </div>
 <table class="table" style="">
     <thead>
@@ -37,24 +42,31 @@
                 <td>@item.Address</td>
                 <td>@item.Email</td>
                 <td>@item.Role</td>
-                <td>
-                    @{
-                        var User = new UpdateAccountForUserOfCompany
+                @if (@GetCurrentUser == Role.CompanyAdministrator || (@GetCurrentUser == Role.User && item.Id == userId))
+                {
+                    <td>
+                        @{
+                            var User = new UpdateAccountForUserOfCompany
+                    {
+                        Id = item.Id,
+                        FirstName = item.FirstName,
+                        LastName = item.LastName,
+                        OldPassword = "",
+                        NewPassword = "",
+                        ConfirmPassword = "",
+                        PhoneNumber = item.PhoneNumber,
+                        Address = item.Address,
+                        Email = item.Email,
+                        Role = item.Role
+                    };
+                        }
+                        <UpdateUserDialog GetCurrentUser="@GetCurrentUser" User="User" FinishUpdate="recallAPI"></UpdateUserDialog>
+                        @if (item.Role != Role.CompanyAdministrator && @GetCurrentUser != Role.User)
                         {
-                            Id = item.Id,
-                            FirstName = item.FirstName,
-                            LastName = item.LastName,
-                            OldPassword = "",
-                            NewPassword = "",
-                            ConfirmPassword = "",
-                            PhoneNumber = item.PhoneNumber,
-                            Address = item.Address,
-                            Email = item.Email,
-                            Role = item.Role
-                        };
-                    }
-                    <UpdateUserDialog GetCurrentUser="@GetCurrentUser" User="User" FinishUpdate="recallAPI"></UpdateUserDialog>
-                </td>
+                            <ConfirmDeleteUser UserId="item.Id" Finish="recallAPI"></ConfirmDeleteUser>
+                        }
+                    </td>
+                }
                 <td></td>
             </tr>
         }
@@ -77,8 +89,19 @@
     public string searchText { get; set; } = "";
     public List<GetEmployeeOfACompany> listEmployees { get; set; } = new();
     public string GetCurrentUser { get; set; } = "";
+    public AuthenticationState? authState = null;
+    public int userId { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        var customState = (CustomAuthenticationStateProvider)AuthenticationState;
+        authState = await customState.GetAuthenticationStateAsync();
+        if (authState.User.Identity.IsAuthenticated)
+        {
+            var UserId = int.Parse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier));
+            userId = UserId;
+        }
+
         var result1 = await UserService.GetCurrentUserRole(new ApplicationUser
         {
             FirstName = "",

@@ -1,4 +1,6 @@
-﻿using DinoTrans.Shared.DTOs;
+﻿using Azure;
+using DinoTrans.Shared.Contracts;
+using DinoTrans.Shared.DTOs;
 using DinoTrans.Shared.DTOs.SearchDTO;
 using DinoTrans.Shared.Entities;
 using DinoTrans.Shared.Services.Interfaces;
@@ -35,14 +37,14 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register (UserDTO userDTO)
+        public async Task<IActionResult> Register(UserDTO userDTO)
         {
             var response = await _userService.CreateAccount(userDTO);
             return Ok(response);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login (LoginDTO loginDTO)
+        public async Task<IActionResult> Login(LoginDTO loginDTO)
         {
             var response = await _userService.LoginAccount(loginDTO);
             return Ok(response);
@@ -84,21 +86,21 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             var response = _userService.GetUserById(UserId);
             return Ok(response);
         }
-
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto)
         {
             var response = await _userService.CreateAccountForUserOfCompany(dto, _currentUser);
             return Ok(response);
         }
-
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> GetAllEmployeesOfACompany(SearchModel dto)
         {
             var response = await _userService.GetAllEmployeesOfACompany(dto, _currentUser);
             return Ok(response);
         }
-
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto)
         {
@@ -106,17 +108,26 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             return Ok(response);
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUserRole([FromQuery] int userId)
         {
             var response = await _userService.GetUserRole(userId);
             return Ok(response);
         }
-
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetCurrentUserRole()
         {
             var response = await _userService.GetUserRole(_currentUser.Id);
+            return Ok(response);
+        }
+
+        [HttpDelete]
+        [Authorize(Roles = Role.CompanyAdministrator)]
+        public async Task<IActionResult> DeleteUserAccount(int userId)
+        {
+            var response = await _userService.DeleteUserAccount(userId);
             return Ok(response);
         }
     }

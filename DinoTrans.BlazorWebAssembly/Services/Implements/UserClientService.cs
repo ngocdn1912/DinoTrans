@@ -229,5 +229,19 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             var apiResponse = await response.Content.ReadAsStringAsync();
             return apiResponse;
         }
+
+        public async Task<GeneralResponse> DeleteUserAccount(int UserId)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .DeleteAsync($"{BaseUrl}/DeleteUserAccount?userId={UserId}");
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return new GeneralResponse(false,"Có lỗi xảy ra");
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
+        }
     }
 }
