@@ -186,5 +186,48 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<ResponseModel<List<GetEmployeeOfACompany>>>(apiResponse);
         }
+
+        public async Task<string> GetUserRole(int userId)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetAllEmployeesOfACompany?userId={userId}");
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return "Có lỗi xảy ra";
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<string>(apiResponse);
+        }
+
+        public async Task<GeneralResponse> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .PostAsync($"{BaseUrl}/UpdateAccountForUserOfCompany",
+                Generics.GenerateStringContent(Generics.SerializeObj(dto)));
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return new GeneralResponse(false, "Có lỗi xảy ra");
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
+        }
+
+        public async Task<string> GetCurrentUserRole(ApplicationUser user)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetCurrentUserRole");
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return "Có lỗi xảy ra";
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return apiResponse;
+        }
     }
 }

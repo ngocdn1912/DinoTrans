@@ -98,5 +98,26 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             var response = await _userService.GetAllEmployeesOfACompany(dto, _currentUser);
             return Ok(response);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto)
+        {
+            var response = await _userService.UpdateAccountForUserOfCompany(dto);
+            return Ok(response);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUserRole([FromQuery] int userId)
+        {
+            var response = await _userService.GetUserRole(userId);
+            return Ok(response);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCurrentUserRole()
+        {
+            var response = await _userService.GetUserRole(_currentUser.Id);
+            return Ok(response);
+        }
     }
 }

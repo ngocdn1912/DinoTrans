@@ -16,6 +16,7 @@ namespace DinoTrans.Shared.Services.Interfaces
     public interface IUserService
     {
         Task<string> GetUserRole(int userId); 
+        Task<string> GetCurrentUserRole(ApplicationUser user);
         Task<GeneralResponse> CreateAccount(UserDTO userDTO);
         Task<LoginResponse> LoginAccount(LoginDTO loginDTO);
         Task<ResponseModel<UserInfoResponseDTO>> GetAllUserInfo(GetAllUserInfoDTO userInfo);
@@ -26,6 +27,6 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<ResponseModel<ApplicationUser>> GetUserByIdAsync(int UserId);
         Task<GeneralResponse> CreateAccountForUserOfCompany(CreateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin);
         Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(SearchModel dto, ApplicationUser _currentCompanyShipperAdmin);
-        Task<ResponseModel<GetEmployeeOfACompany>> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin);
+        Task<GeneralResponse> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto);
     }
 }

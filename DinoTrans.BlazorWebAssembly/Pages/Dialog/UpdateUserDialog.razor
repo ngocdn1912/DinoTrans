@@ -1,0 +1,139 @@
+﻿@inject IJSRuntime js
+@inject IUserService UserService
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Hosting
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:500px" id="update-employee-@User.Id">
+    <EditForm Model="User">
+        <div class="card">
+            <div class="column">
+                <div class="card-header text-center column">
+                    <img src="/images/UserIconImage.jpg" style="max-width:200px; max-height:200px;" />
+                    <div>Cập nhật nhân viên</div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="form-group mt-3">
+                        <label class="form-label">Tên nhân viên</label>
+                        <input type="text" @bind="User.FirstName" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Họ nhân viên</label>
+                        <input type="text" @bind="User.LastName" class="form-control" />
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">Email/Tên đăng nhập</label>
+                        <input disabled type="text" @bind="User.Email" class="form-control" />
+                    </div>
+
+                    @if (GetCurrentUser == Role.User)
+                    {
+                        <div class="form-group mt-3">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" @bind="User.PhoneNumber" class="form-control" />
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label class="form-label">Địa chỉ liên hệ</label>
+                            <input type="text" @bind="User.Address" class="form-control" />
+                        </div>
+
+                        <div class="form-group mt-3 row col-md-12">
+                            <div class="col-md-1">
+                                <input type="checkbox" @bind="IsShowChangePassword" @onclick="ShowPasswordChange" />
+                            </div>
+                            <div class="col-md-11">
+                                <div>Thay đổi mật khẩu</div>
+                            </div>
+                        </div>
+
+                        @if (IsShowChangePassword)
+                        {
+                            <div class="form-group mt-3">
+                                <label class="form-label">Mật khẩu cũ</label>
+                                <input type="text" @bind="User.OldPassword" class="form-control" />
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label class="form-label">Mật khẩu mới</label>
+                                <input type="text" @bind="User.NewPassword" class="form-control" />
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label class="form-label">Xác nhận mật khẩu</label>
+                                <input type="text" @bind="User.ConfirmPassword" class="form-control" />
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="card-footer row">
+                    <div class="form-group col-md-6">
+                        <button class="btn btn-secondary ms-2" type="submit" @onclick="Close">Cancel</button>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <button style="max-width:100px" class="btn btn-primary float-end me-2" type="submit" @onclick="UpdateUser">Cập nhật</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</dialog>
+
+<button class="btn btn-outline-success" @onclick="OpenDialog">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
+    </svg>
+</button>
+
+@code {
+    [Parameter]
+    public UpdateAccountForUserOfCompany User { get; set; } = new();
+    [Parameter]
+    public EventCallback FinishUpdate { get; set; } = new();
+    public bool IsShowChangePassword { get; set; } = false;
+    [Parameter]
+    public string GetCurrentUser { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (User.PhoneNumber == null) User.PhoneNumber = "";
+        if (User.Address == null) User.Address = "";
+    }
+    async void Close()
+    {
+        await js.InvokeVoidAsync("CloseDialog", $"update-employee-{User.Id}");
+    }
+
+    public void ShowPasswordChange()
+    {
+        IsShowChangePassword = !IsShowChangePassword;     
+    }
+
+    async Task OpenDialog()
+    {
+        await js.InvokeVoidAsync("OpenDialog", $"update-employee-{User.Id}");
+    }
+
+    private async Task UpdateUser()
+    {
+        if (!IsShowChangePassword)
+        {
+            User.OldPassword = "";
+            User.NewPassword = "";
+            User.ConfirmPassword = "";
+        }
+
+        var result = await UserService.UpdateAccountForUserOfCompany(User);
+        await js.InvokeVoidAsync("alert", result.Message);
+        if(result.Flag)
+        {
+            User.OldPassword = "";
+            User.NewPassword = "";
+            User.ConfirmPassword = "";
+            Close();
+            await FinishUpdate.InvokeAsync();
+        }
+    }
+}

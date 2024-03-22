@@ -14,6 +14,7 @@ using System.Text;
 using static DinoTrans.Shared.DTOs.ServiceResponses;
 using Microsoft.EntityFrameworkCore;
 using DinoTrans.Shared.DTOs.SearchDTO;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 {
@@ -431,6 +432,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 var role = roles.Where(r => r.Id == employeeRoleId).Select(r => r.Name).FirstOrDefault();
                 data.Add(new GetEmployeeOfACompany
                 {
+                    Id = item.Id,
                     FirstName = item.FirstName,
                     LastName = item.LastName,
                     PhoneNumber = item.PhoneNumber,
@@ -455,25 +457,56 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             };
         }
 
-        public async Task<ResponseModel<GetEmployeeOfACompany>> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto, ApplicationUser _currentCompanyShipperAdmin)
+        public async Task<GeneralResponse> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto)
         {
-            var user = await _userRepository
-                .AsNoTracking()
-                .Where(u => u.Id == dto.Id)
-                .FirstOrDefaultAsync();
-
-            if (user == null)
+            try
             {
-                return new ResponseModel<GetEmployeeOfACompany>
+                _unitOfWork.BeginTransaction();
+                var user = await _userRepository
+                    .AsNoTracking()
+                    .Where(u => u.Id == dto.Id)
+                    .FirstOrDefaultAsync();
+
+                if (user == null)
                 {
-                    Success = false,
-                    Message = "Không tìm thấy nhân viên"
-                };
+                    _unitOfWork.Rollback();
+                    return new GeneralResponse(false, "Không tìm thấy nhân viên");
+                }
+
+                if(dto.NewPassword != dto.ConfirmPassword)
+                {
+                    _unitOfWork.Rollback();
+                    return new GeneralResponse(false, "Xác nhận mật khẩu không chính xác");
+                }
+
+                user.FirstName = dto.FirstName;
+                user.LastName = dto.LastName;
+                user.PhoneNumber = dto.PhoneNumber != null ? dto.PhoneNumber : user.PhoneNumber;
+                user.Address = dto.Address != null ? dto.Address : user.Address;
+                if(!dto.ConfirmPassword.IsNullOrEmpty() && !dto.NewPassword.IsNullOrEmpty() && !dto.OldPassword.IsNullOrEmpty()) 
+                {
+                    user.PasswordHash = dto.ConfirmPassword;
+                    var result = await _userManager.ChangePasswordAsync(user, dto.NewPassword, dto.NewPassword);
+                    if (!result.Succeeded)
+                    {
+                        string errors = "";
+                        foreach (var itemError in result.Errors)
+                        {
+                            errors += itemError.Description.ToString() + "\n";
+                        }
+                        _unitOfWork.Rollback();
+                        return new GeneralResponse(false, "Lỗi update mật khẩu");
+                    }
+                }               
+                _unitOfWork.SaveChanges();
+                _unitOfWork.Commit();
+                return new GeneralResponse(true, "Cập nhật tài khoản thành công");
             }
-
-            user.FirstName = dto.FirstName;
-            user.LastName = dto.LastName;
-
+            catch(Exception ex) 
+            {
+                _unitOfWork.Rollback();
+                return new GeneralResponse(false, "Có lỗi xảy ra " + ex.Message);
+            }
         }
 
         public async Task<string> GetUserRole(int userId)
@@ -495,6 +528,11 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 .FirstOrDefaultAsync();
 
             return role!.ToString();
+        }
+
+        public async Task<string> GetCurrentUserRole(ApplicationUser user)
+        {
+            return await GetUserRole(user.Id);
         }
     }
 }

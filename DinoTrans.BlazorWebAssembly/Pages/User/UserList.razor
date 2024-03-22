@@ -37,7 +37,24 @@
                 <td>@item.Address</td>
                 <td>@item.Email</td>
                 <td>@item.Role</td>
-                <td></td>
+                <td>
+                    @{
+                        var User = new UpdateAccountForUserOfCompany
+                        {
+                            Id = item.Id,
+                            FirstName = item.FirstName,
+                            LastName = item.LastName,
+                            OldPassword = "",
+                            NewPassword = "",
+                            ConfirmPassword = "",
+                            PhoneNumber = item.PhoneNumber,
+                            Address = item.Address,
+                            Email = item.Email,
+                            Role = item.Role
+                        };
+                    }
+                    <UpdateUserDialog GetCurrentUser="@GetCurrentUser" User="User" FinishUpdate="recallAPI"></UpdateUserDialog>
+                </td>
                 <td></td>
             </tr>
         }
@@ -59,8 +76,19 @@
     public int TotalPage { get; set; }
     public string searchText { get; set; } = "";
     public List<GetEmployeeOfACompany> listEmployees { get; set; } = new();
+    public string GetCurrentUser { get; set; } = "";
     protected override async Task OnInitializedAsync()
     {
+        var result1 = await UserService.GetCurrentUserRole(new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
+        if(result1 != null && result1 != "")
+        {
+            GetCurrentUser = result1;
+        }
         var searchModel = new SearchModel
         {
             SearchText = "",
