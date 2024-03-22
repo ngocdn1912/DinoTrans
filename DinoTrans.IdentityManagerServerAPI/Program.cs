@@ -94,6 +94,8 @@ builder.Services.AddScoped<ITenderBidService,  TenderBidService>();
 builder.Services.AddSingleton<TenderServiceFactory>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
+
 
 builder.Services.AddHostedService<TenderBackgroundService>();
 builder.Services.AddSignalR();
