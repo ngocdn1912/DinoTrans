@@ -68,7 +68,7 @@ else
                     <RadzenDataGridColumn Filterable="false" TItem="TenderBid" Property="TransportPrice" Title="Giá đặt thầu" FormatString="{0:N0} VNĐ" Width="160px" />
                     <RadzenDataGridColumn TItem="TenderBid" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="200px">
                         <Template Context="data">
-                            <ConfirmSelectBid IsActiveScreen=IsActiveScreen TenderBidId="@data.Id" CompanyName="@data.CompanyCarrier!.CompanyName" Finish="HandleCallBack"></ConfirmSelectBid>
+                            <ConfirmSelectBid CompanyId="@CompanyShipperId" BidMoney="@data.TransportPrice" IsActiveScreen=IsActiveScreen TenderBidId="@data.Id" CompanyName="@data.CompanyCarrier!.CompanyName" Finish="HandleCallBack"></ConfirmSelectBid>
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -85,6 +85,8 @@ else
 @code {
     [Parameter]
     public List<TenderBid> listBids { get; set; }
+    [Parameter]
+    public int CompanyShipperId { get; set; }
     [Parameter]
     public CompanyRoleEnum companyRole { get; set; }
     [Parameter]

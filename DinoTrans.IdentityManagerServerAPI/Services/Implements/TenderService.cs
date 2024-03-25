@@ -90,7 +90,6 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 tender.IsShipperComfirm = true;
             }
 
-            if (tender.IsShipperComfirm && tender.IsCarrierComfirm) tender.TenderStatus = TenderStatuses.Completed;
             _tenderRepository.Update(tender);
             _tenderRepository.SaveChange();
             return new GeneralResponse(true, currentUser!.CompanyId == tender.CompanyCarrierId ? "Bạn đã đóng thầu thành công, hãy chờ công ty tạo thầu kết thúc" : "Bạn đã đóng thầu thành công");
@@ -663,7 +662,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var tenderInExecution = (from t in _tenderRepository.AsNoTracking()
                                     .Where(t => t.TenderStatus == TenderStatuses.InExcecution
-                                    && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId))
+                                    && (t.CompanyCarrierId == currentUser!.CompanyId 
+                                    || t.CompanyShipperId == currentUser!.CompanyId
+                                    || companyRole.ToString() == Role.DinoTransAdmin))
                                     join tb in _tenderBidRepository.AsNoTracking() on t.Id equals tb.TenderId
                                     join tc in _tenderConstructionMachineRepository.AsNoTracking() on t.Id equals tc.TenderId
                                     join c in _contructionMachineRepository.AsNoTracking() on tc.ContructionMachineId equals c.Id
@@ -881,7 +882,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 if (newTenderToAssignDTO.Bids.Count > 0)
                 {
                     if((currentUserCompany!.Role == CompanyRoleEnum.Carrier && newTenderToAssignDTO.Bids.Any(tb => tb.CompanyCarrierId == currentUser!.CompanyId))
-                        || (currentUserCompany!.Role == CompanyRoleEnum.Shipper))
+                        || (currentUserCompany!.Role == CompanyRoleEnum.Shipper) 
+                        || (currentUserCompany!.Role == CompanyRoleEnum.Admin && newTenderToAssignDTO.TimeRemaining <= 0 && newTenderToAssignDTO.Bids.Any()))
                         listTenderToAssignDTO.Add(newTenderToAssignDTO);
                 }
             }

@@ -18,7 +18,29 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _companyRepository = companyRepository;
         }
 
-        public async Task<ResponseModel<Company>> GetCompanyById(ApplicationUser user)
+        public async Task<ResponseModel<Company>> GetCompanyByCompanyId(int CompanyId)
+        {
+            var company = await _companyRepository
+                .AsNoTracking()
+                .Where(c => c.Id == CompanyId)
+                .FirstOrDefaultAsync();
+
+            if (company == null)
+            {
+                return new ResponseModel<Company>
+                {
+                    Success = false,
+                    Message = $"Không tìm thấy công ty với Id = {CompanyId}"
+                };
+            }
+            return new ResponseModel<Company>
+            {
+                Success = true,
+                Data = company
+            };
+        }
+
+        public async Task<ResponseModel<Company>> GetCompanyByCurrentUserId(ApplicationUser user)
         {
             var company = await _companyRepository
                 .AsNoTracking()

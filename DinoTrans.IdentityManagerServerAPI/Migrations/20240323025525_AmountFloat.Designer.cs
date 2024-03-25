@@ -4,6 +4,7 @@ using DinoTrans.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DinoTrans.IdentityManagerServerAPI.Migrations
 {
     [DbContext(typeof(DinoTransDbContext))]
-    partial class DinoTransDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240323025525_AmountFloat")]
+    partial class AmountFloat
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -150,7 +153,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Migrations
                     b.Property<int>("BillType")
                         .HasColumnType("int");
 
-                    b.Property<int>("TenderBidId")
+                    b.Property<int>("TenderId")
                         .HasColumnType("int");
 
                     b.Property<float?>("vnp_Amount")

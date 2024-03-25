@@ -1,42 +1,93 @@
 ﻿@inject IJSRuntime js
 @inject ITenderBidService TenderBidService
+@inject IVnPayService VnPayService
+@inject NavigationManager nav
+@inject ICompanyService CompanyService
 
-@if (!IsActiveScreen)
-{
-    <button class="btn btn-outline-success" @onclick="Submit">Chọn đề nghị</button>
-}
+<AuthorizeView>
+    <Authorized>
+        @if (!IsActiveScreen && context.User.FindFirstValue(ClaimTypes.Role) != Role.DinoTransAdmin)
+        {
+            <button class="btn btn-outline-success" @onclick="Submit">Chọn đề nghị</button>
+        }
 
-<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:150px" id="confirm-select-TenderBid-@TenderBidId">
-    <div class="card">
-        <div class="card-header text-center">
-            <b>Xác nhận chọn?</b>
-        </div>
-        <div class="card-body">
-            <div>Bạn có chắc muốn chọn công ty @CompanyName để thực hiện vận chuyển?</div>
-        </div>
-        <div class="card-footer row">
-            <div class="form-group col-md-6">
-                <button class="btn btn-outline-danger ms-2" type="submit" @onclick="Close">Đóng</button>
+        <dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:150px" id="confirm-select-TenderBid-@TenderBidId">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row col-md-12">
+                        <div class="col-md-5">
+                            <img src="/images/logo2.png" style="max-width: 120px; max-height:120px;" />
+                        </div>
+                        <div class="col-md-2">
+                            <div style="padding-top:50px;padding-left:10px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left-right" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5m14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <img src="/images/VnPayImage.png" style="max-width: 120px; max-height:120px;" />
+                        </div>
+                    </div>
+                    <b>Xác nhận chọn?</b>
+                    <div>Bạn có chắc muốn chọn công ty @CompanyName để thực hiện vận chuyển?</div>
+                    <div>Bạn sẽ được điều hướng tới trang thanh toán bằng VnPay.</div>
+                </div>
+                <hr>
+
+                <div class="card-body">
+                    <b>Chi tiết giao dịch</b>
+                    <div>Bạn sẽ phải trả những khoản phí sau cho cuộc vận chuyển</div>
+                    <div>- Giá đặt thầu của bạn: @BidMoney.ToString("N0") (VNĐ)</div>
+                    <div>- Phí trung gian cho DinoTransAdmin (@PercentFeeForShipper% giá đặt thầu): @Fee.ToString("N0") (VNĐ)</div>
+                    <hr />
+                    <div>Tổng tiền thanh toán: @Total.ToString("N0") (VNĐ)</div>
+                </div>
+                <div class="card-footer row">
+                    <div class="form-group col-md-6">
+                        <button class="btn btn-outline-danger float-start" type="submit" @onclick="Close">Đóng</button>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="OK">Xác nhận</button>
+                    </div>
+                </div>
             </div>
-            <div class="form-group col-md-6">
-                <button style="max-width:100px" class="btn btn-outline-success float-end me-2" type="submit" @onclick="OK">Xác nhận</button>
-            </div>
-        </div>
-    </div>
-</dialog>
+        </dialog>
+    </Authorized>
+</AuthorizeView>
 @code {
     [Parameter]
     public int TenderBidId { get; set; }
     [Parameter]
     public bool IsActiveScreen { get; set; }
     [Parameter]
+    public float BidMoney { get; set; }
+    [Parameter]
+    public float PercentFeeForShipper { get; set; }
+    [Parameter]
     public string CompanyName { get; set; }
+    [Parameter]
+    public int CompanyId { get; set; }
     public ApplicationUser _currentUser;
     [Parameter]
     public EventCallback Finish { get; set; }
+    public float Fee { get; set; }
+    public float Total { get; set; }
     protected override async Task OnInitializedAsync()
     {
         if (CompanyName == null) CompanyName = "";
+
+        var companyShipper = await CompanyService.GetCompanyByCompanyId(CompanyId);
+        if (companyShipper.Success)
+        {
+            PercentFeeForShipper = companyShipper.Data.ShipperFeePercentage;
+            Fee = BidMoney * PercentFeeForShipper / 100;
+            Total = BidMoney + Fee;
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "Có lỗi xảy ra");
+        }
     }
     async void Close()
     {
@@ -46,13 +97,25 @@
     }
     async void OK()
     {
-        var result = await TenderBidService.ChooseTenderBid(TenderBidId, _currentUser);
+        var result = await VnPayService.TransacVNPay(TenderBidId, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
+
         if (result.Flag)
         {
-            Close();
-            await Finish.InvokeAsync();
+            nav.NavigateTo(result.Message);
         }
-        await js.InvokeVoidAsync("alert", result.Message);
+        else
+            await js.InvokeVoidAsync("alert", result.Message);
+        //var result = await TenderBidService.ChooseTenderBid(TenderBidId, _currentUser);
+        //if (result.Flag)
+       // {
+         //   Close();
+          //  await Finish.InvokeAsync();
+        //}
+        //await js.InvokeVoidAsync("alert", result.Message);
     }
 
     public async Task Submit()

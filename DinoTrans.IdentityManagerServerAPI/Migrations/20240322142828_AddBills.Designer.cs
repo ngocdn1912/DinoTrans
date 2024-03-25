@@ -4,6 +4,7 @@ using DinoTrans.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DinoTrans.IdentityManagerServerAPI.Migrations
 {
     [DbContext(typeof(DinoTransDbContext))]
-    partial class DinoTransDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240322142828_AddBills")]
+    partial class AddBills
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -150,43 +153,55 @@ namespace DinoTrans.IdentityManagerServerAPI.Migrations
                     b.Property<int>("BillType")
                         .HasColumnType("int");
 
-                    b.Property<int>("TenderBidId")
+                    b.Property<int>("TenderId")
                         .HasColumnType("int");
 
-                    b.Property<float?>("vnp_Amount")
-                        .HasColumnType("real");
+                    b.Property<string>("vnp_Amount")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_BankCode")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_BankTranNo")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_CardType")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_OrderInfo")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_PayDate")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_ResponseCode")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_SecureHash")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_TmnCode")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_TransactionNo")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_TransactionStatus")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("vnp_TxnRef")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

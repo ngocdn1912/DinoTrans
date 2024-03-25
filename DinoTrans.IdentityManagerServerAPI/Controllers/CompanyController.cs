@@ -3,12 +3,14 @@ using DinoTrans.Shared.DTOs.Company;
 using DinoTrans.Shared.DTOs.ContructionMachine;
 using DinoTrans.Shared.Entities;
 using DinoTrans.Shared.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace DinoTrans.IdentityManagerServerAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class CompanyController : ControllerBase
@@ -34,15 +36,22 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCompanyById()
+        public async Task<IActionResult> GetCompanyByCurrentUserId()
         {
-            var result = await _companyService.GetCompanyById(_currentUser);
+            var result = await _companyService.GetCompanyByCurrentUserId(_currentUser);
             return Ok(result);
         }
         [HttpPut]
         public async Task<IActionResult> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto)
         {
             var result = await _companyService.UpdateCompanyInforByAdminOfCompany(dto,_currentUser);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCompanyByCompanyId([FromQuery] int CompanyId)
+        {
+            var result = await _companyService.GetCompanyByCompanyId(CompanyId);
             return Ok(result);
         }
     }

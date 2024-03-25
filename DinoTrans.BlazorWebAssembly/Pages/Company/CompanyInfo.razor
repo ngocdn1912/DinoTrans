@@ -94,7 +94,7 @@
 
     public async Task GetCompany()
     {
-        var result = await CompanyService.GetCompanyById(new ApplicationUser
+        var result = await CompanyService.GetCompanyByCurrentUserId(new ApplicationUser
         {
             FirstName = "",
             LastName = ""

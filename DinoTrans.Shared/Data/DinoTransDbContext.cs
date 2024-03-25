@@ -22,6 +22,7 @@ namespace DinoTrans.Shared.Data
         public DbSet<TenderBidTransportation> TenderBidTransportations { get; set; }
         public DbSet<TenderContructionMachine> TenderContructionMachines { get; set; }
         public DbSet<Transportation> Transportations { get; set; }
+        public DbSet<Bill> Bills { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

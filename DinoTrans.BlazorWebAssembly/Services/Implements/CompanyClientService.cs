@@ -22,12 +22,12 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             _localStorageService = localStorageService;
         }
 
-        public async Task<ResponseModel<Company>> GetCompanyById(ApplicationUser user)
+        public async Task<ResponseModel<Company>> GetCompanyByCurrentUserId(ApplicationUser user)
         {
             string token = await _localStorageService.GetItemAsStringAsync("token");
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             var response = await _httpClient
-                .GetAsync($"{BaseUrl}/GetCompanyById");
+                .GetAsync($"{BaseUrl}/GetCompanyByCurrentUserId");
 
             // Đọc phản hồi từ API
             if (!response.IsSuccessStatusCode)
@@ -55,6 +55,25 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
+        }
+
+        public async Task<ResponseModel<Company>> GetCompanyByCompanyId(int CompanyId)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetCompanyByCompanyId?CompanyId={CompanyId}");
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new ResponseModel<Company>
+                {
+                    Success = false,
+                    Message = "Có lỗi xẩy ra"
+                };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<Company>> (apiResponse);
         }
     }
 }

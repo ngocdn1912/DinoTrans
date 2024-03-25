@@ -84,6 +84,7 @@ builder.Services.AddScoped<ITenderRepository, TenderRepository>();
 builder.Services.AddScoped<IConstructionMachineRepository, ConstructionMachineRepository>();
 builder.Services.AddScoped<ITenderConstructionMachineRepository, TenderConstructionMachineRepository>();
 builder.Services.AddScoped<ITenderBidRepository, TenderBidRepository>();
+builder.Services.AddScoped<IBillRepository, BillRepository>();
 
 
 //Services
