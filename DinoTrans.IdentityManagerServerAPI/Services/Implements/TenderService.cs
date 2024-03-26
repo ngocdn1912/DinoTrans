@@ -31,6 +31,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         private readonly ITenderBidRepository _tenderBidRepository;
         private readonly IConstructionMachineService _machineService;
         private readonly ITenderBidService _tenderBidService;
+        private readonly IVnPayService _vnPayService;
         public TenderService(ITenderRepository tenderRepository,
             ICompanyRepository companyRepository, 
             IConstructionMachineRepository contructionMachineRepository,
@@ -38,7 +39,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             IUnitOfWork unitOfWork,
             ITenderBidRepository tenderBidRepository,
             IConstructionMachineService machineService,
-            ITenderBidService tenderBidService)
+            ITenderBidService tenderBidService,
+            IVnPayService vnPayService)
         {
             _tenderRepository = tenderRepository;
             _companyRepository = companyRepository;
@@ -48,14 +50,23 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _tenderBidRepository = tenderBidRepository;
             _machineService = machineService;
             _tenderBidService = tenderBidService;
+            _vnPayService = vnPayService;
         }
 
         public async Task<GeneralResponse> ConfirmCompleteTender(int TenderId, ApplicationUser? currentUser)
         {
             var tender = await _tenderRepository
                 .Queryable()
+                .Include(t => t.CompanyCarrier)
+                .Include(t => t.CompanyShipper)
                 .Where(t => t.Id == TenderId)
                 .FirstOrDefaultAsync();
+
+            var tenderBid = (await _tenderBidService.GetTenderBidsByTenderId(TenderId)).Data.FirstOrDefault(tb => tb.IsSelected);
+            if(tenderBid  == null)
+            {
+                return new GeneralResponse(false, "Không tìm thấy đấu giá đã được chọn");
+            }    
 
             if(tender == null)
             {
@@ -67,7 +78,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 return new GeneralResponse(false, $"Thầu không ở trạng thái đang hoạt động");
             }
 
-            if(currentUser!.CompanyId != tender.CompanyShipperId && currentUser!.CompanyId != tender.CompanyCarrierId)
+            if(currentUser!.CompanyId != tender.CompanyShipperId && currentUser!.CompanyId != tender.CompanyCarrierId && currentUser.Company.Role != CompanyRoleEnum.Admin)
             {
                 return new GeneralResponse(false, "Bạn không sở hữu thầu này");
             }    
@@ -79,15 +90,24 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             if(currentUser!.CompanyId == tender.CompanyCarrierId)
             {
-                if (tender.IsCarrierComfirm == true) return new GeneralResponse(false, "Bạn đã đóng thành công vận chuyển này rồi, hãy đợi bên thuê vận chuyển kết thúc thầu");
+                if (tender.IsCarrierComfirm == true) return new GeneralResponse(false, $"Bạn đã đóng thành công vận chuyển này rồi, hãy đợi công ty thuê vận chuyển {tender.CompanyShipper.CompanyName} và Admin kết thúc thầu");
                 tender.IsCarrierComfirm = true;
             }
 
             if (currentUser!.CompanyId == tender.CompanyShipperId)
             {
-                if(tender.IsCarrierComfirm == false) return new GeneralResponse(false, "Bên công ty giao máy chưa xác nhận, chưa thể kết thúc thầu");
-                if(tender.IsShipperComfirm == true) return new GeneralResponse(false, "Bạn đã đóng thành công vận chuyển này rồi, vui lòng xem chi tiết ở mục Thầu đã hoàn thành");
+                if(tender.IsCarrierComfirm == false) return new GeneralResponse(false, $"Bên công ty giao máy {tender.CompanyCarrier.CompanyName} chưa xác nhận, chưa thể kết thúc thầu");
+                if(tender.IsShipperComfirm == true) return new GeneralResponse(false, "Bạn đã đóng thành công vận chuyển này rồi, hãy đợi Admin hoàn tất thầu");
                 tender.IsShipperComfirm = true;
+            }
+
+            if(currentUser!.Company.Role == CompanyRoleEnum.Admin)
+            {
+                if (tender.IsCarrierComfirm == false) return new GeneralResponse(false, $"Công ty vận chuyển {tender.CompanyCarrier.CompanyName} chưa xác nhận, chưa thể kết thúc thầu");
+                if (tender.IsShipperComfirm == false) return new GeneralResponse(false, $"Công ty thuê vận chuyển {tender.CompanyShipper.CompanyName} chưa xác nhận, chưa thể kết thúc thầu");
+
+                var result = await _vnPayService.TransacVNPay_FromAdmin(tenderBid.Id);
+                return new GeneralResponse(result.Flag, result.Message);
             }
 
             _tenderRepository.Update(tender);
@@ -664,7 +684,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                                     .Where(t => t.TenderStatus == TenderStatuses.InExcecution
                                     && (t.CompanyCarrierId == currentUser!.CompanyId 
                                     || t.CompanyShipperId == currentUser!.CompanyId
-                                    || companyRole.ToString() == Role.DinoTransAdmin))
+                                    || companyRole.ToString() == CompanyRoleEnum.Admin.ToString()))
                                     join tb in _tenderBidRepository.AsNoTracking() on t.Id equals tb.TenderId
                                     join tc in _tenderConstructionMachineRepository.AsNoTracking() on t.Id equals tc.TenderId
                                     join c in _contructionMachineRepository.AsNoTracking() on tc.ContructionMachineId equals c.Id
@@ -758,7 +778,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var inexeTenders = _tenderRepository.AsNoTracking().Include(t => t.CompanyCarrier).Include(t => t.CompanyShipper)
                                     .Where(t => t.TenderStatus == TenderStatuses.InExcecution
-                                    && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId)).ToList();
+                                    && (t.CompanyCarrierId == currentUser!.CompanyId 
+                                    || t.CompanyShipperId == currentUser!.CompanyId
+                                    || companyRole.ToString() == CompanyRoleEnum.Admin.ToString())).ToList();
 
             if (companyRole == CompanyRoleEnum.Shipper)
                 inexeTenders = inexeTenders.Where(t => t.CompanyShipperId == currentUser!.CompanyId).ToList();

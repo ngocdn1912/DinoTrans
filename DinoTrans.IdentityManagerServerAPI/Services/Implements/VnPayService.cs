@@ -91,7 +91,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 var locale = string.Empty;
 
                 vnpay.AddRequestData("vnp_Locale", !string.IsNullOrEmpty(locale) ? locale : "vn");
-                vnpay.AddRequestData("vnp_OrderInfo", $"Cong ty thue van chuyen {company.Data.CompanyName} thanh toan tien cua thau so #000{tenderBid.TenderId}");
+                vnpay.AddRequestData("vnp_OrderInfo", $"Công ty thuê vận chuyển {company.Data.CompanyName} thanh toán tiền của thầu số #000{tenderBid.TenderId}");
                 vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
 
                 vnpay.AddRequestData("vnp_ReturnUrl", vnp_Returnurl);
@@ -221,7 +221,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 var locale = string.Empty;
 
                 vnpay.AddRequestData("vnp_Locale", !string.IsNullOrEmpty(locale) ? locale : "vn");
-                vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan tien cho ben van chuyen cong ty {company.Data.CompanyName} hoa don cua thau so #000{tenderBid.TenderId}");
+                vnpay.AddRequestData("vnp_OrderInfo", $"AdminDinoTrans thanh toan tien cho ben van chuyen cong ty {company.Data.CompanyName} hoa don cua thau so #000{tenderBid.TenderId}");
                 vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
 
                 vnpay.AddRequestData("vnp_ReturnUrl", vnp_Returnurl);
