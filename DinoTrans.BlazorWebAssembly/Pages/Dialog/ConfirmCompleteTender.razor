@@ -1,9 +1,11 @@
 ﻿@inject IJSRuntime js
 @inject ITenderService TenderService
+@inject ICompanyService CompanyService
+@inject NavigationManager Nav
 
 <AuthorizeView>
     <Authorized>
-        @if ((Company == CompanyRoleEnum.Carrier && !IsFinishForCarrier) || (Company == CompanyRoleEnum.Shipper && !IsFinishForShipper) || Company == CompanyRoleEnum.Admin)
+        @if ((Company == CompanyRoleEnum.Carrier && !IsFinishForCarrier) || (Company == CompanyRoleEnum.Shipper && !IsFinishForShipper && IsFinishForCarrier) || (Company == CompanyRoleEnum.Admin && IsFinishForCarrier && IsFinishForShipper))
         {
             <button class="btn btn-outline-secondary" @onclick="Submit">
                 <i class="bi bi-lock"></i>
@@ -41,7 +43,7 @@
         {
             <dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:150px" id="confirm-finish-tender-@TenderId">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body text-center">
                         <div class="row col-md-12">
                             <div class="col-md-5">
                                 <img src="/images/logo2.png" style="max-width: 120px; max-height:120px;" />
@@ -58,16 +60,16 @@
                             </div>
                         </div>
                         <b>Xác nhận chọn?</b>
-                        <div>Bạn có chắc muốn chọn công ty @CompanyName để thực hiện vận chuyển?</div>
+                        <div>Bạn có chắc muốn kết thúc thầu và thanh toán tiền cho bên vận chuyển?</div>
                         <div>Bạn sẽ được điều hướng tới trang thanh toán bằng VnPay.</div>
                     </div>
                     <hr>
 
-                    <div class="card-body">
+                    <div class="card-body text-center">
                         <b>Chi tiết giao dịch</b>
                         <div>Bạn sẽ phải trả những khoản phí sau cho cuộc vận chuyển</div>
-                        <div>- Giá đặt thầu của bạn: @BidMoney.ToString("N0") (VNĐ)</div>
-                        <div>- Phí trung gian cho DinoTransAdmin (@PercentFeeForShipper% giá đặt thầu): @Fee.ToString("N0") (VNĐ)</div>
+                        <div>- Giá vận chuyển: @selectedBid.TransportPrice.ToString("N0") (VNĐ)</div>
+                        <div>- Phí trung gian cho DinoTransAdmin (được nhận) (@PercentFeeForCarrier% giá đặt thầu): @Fee.ToString("N0") (VNĐ)</div>
                         <hr />
                         <div>Tổng tiền thanh toán: @Total.ToString("N0") (VNĐ)</div>
                     </div>
@@ -95,13 +97,31 @@
     public bool IsFinishForShipper { get; set; } = false;
     public string Title { get; set; }
     public string Body { get; set; }
+    [Parameter]
+    public List<TenderBid> Bids { get; set; } = new();
+    public TenderBid selectedBid { get; set; } = new();
+    public float Fee { get; set; }
+    public float Total { get; set; }
+    public float PercentFeeForCarrier { get; set; }
     protected override async Task OnInitializedAsync()
     {
+        selectedBid = Bids.Where(b => b.IsSelected).FirstOrDefault();
+        var companyCarrier = await CompanyService.GetCompanyByCompanyId(selectedBid.CompanyCarrierId);
+        if (companyCarrier.Success)
+        {
+            PercentFeeForCarrier = companyCarrier.Data.ShipperFeePercentage;
+            Fee = selectedBid.TransportPrice * PercentFeeForCarrier / 100;
+            Total = selectedBid.TransportPrice - Fee;
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "Có lỗi xảy ra");
+        }
         var result = await TenderService.GetTenderById(TenderId);
         if(result.Success)
         {
-            if (Company == CompanyRoleEnum.Carrier && result.Data.IsCarrierConfirm) IsFinishForCarrier = true;
-            else if (Company == CompanyRoleEnum.Shipper && result.Data.IsShipperConfirm) IsFinishForShipper = true;
+            if (result.Data.IsCarrierConfirm) IsFinishForCarrier = true;
+            if (result.Data.IsShipperConfirm) IsFinishForShipper = true;
         }
         if(Company == CompanyRoleEnum.Shipper)
         {
@@ -124,15 +144,23 @@
             FirstName = "",
             LastName = ""
         });
-        if (result.Flag)
+        if (result.Flag && Company != CompanyRoleEnum.Admin)
         {
             Close();
             if(Company == CompanyRoleEnum.Carrier) IsFinishForCarrier = true;
+            if (Company == CompanyRoleEnum.Shipper) IsFinishForShipper = true;
             await Finish.InvokeAsync();
-        }else
+        }
+        else if (result.Flag && Company == CompanyRoleEnum.Admin)
+        {
+            Nav.NavigateTo(result.Message);
+        }
+        else
         {
             if (Company == CompanyRoleEnum.Carrier) IsFinishForCarrier = false;
+            if (Company == CompanyRoleEnum.Shipper) IsFinishForShipper = false;
             await js.InvokeVoidAsync("alert", result.Message);
+            Close();
         }
     }
 

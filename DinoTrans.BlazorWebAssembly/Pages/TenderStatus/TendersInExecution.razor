@@ -8,98 +8,106 @@
 @inject NavigationManager nav
 @using System.Timers
 @inject ITenderBidService TenderBidService
-@if (nav.Uri.Contains("InExecution"))
-{
-    <PageTitle>TendersInExecution</PageTitle>
-}
-else
-{
-    <PageTitle>TendersCompleted</PageTitle>
-}
-<div class="card">
-    <div class="card-body">
+<AuthorizeView>
+    <Authorized>
         @if (nav.Uri.Contains("InExecution"))
         {
-            <div><b>Tất cả thầu đang tiến hành</b></div>
-        }else
-        {
-            <div><b>Tất cả thầu đã hoàn tất</b></div>
+            <PageTitle>TendersInExecution</PageTitle>
         }
-        <hr />
-        <ConstructionMachineSearch searchDTO="searchDTO" searchDTOCallBack="HandleSearchCallBack"></ConstructionMachineSearch>
-        <br />
-        <br />
+        else
+        {
+            <PageTitle>TendersCompleted</PageTitle>
+        }
+        <div class="card">
+            <div class="card-body">
+                @if (nav.Uri.Contains("InExecution"))
+                {
+                    <div><b>Tất cả thầu đang tiến hành</b></div>
+                }else
+                {
+                    <div><b>Tất cả thầu đã hoàn tất</b></div>
+                }
+                <hr />
+                <ConstructionMachineSearch searchDTO="searchDTO" searchDTOCallBack="HandleSearchCallBack"></ConstructionMachineSearch>
+                <br />
+                <br />
 
-        <div style="overflow-x: auto;">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th class="table-tender">Số hiệu thầu</th>
-                        <th class="table-tender">Tên thầu</th>
-                        <th class="table-tender">Danh sách máy</th>
-                        <th class="table-tender">Địa chỉ nhận</th>
-                        <th class="table-tender">Địa chỉ giao</th>
-                        <th class="table-tender">Thời gian nhận muộn nhất</th>
-                        <th class="table-tender">Thời gian giao muộn nhất</th>
-                        <th class="table-tender">Công ty tạo thầu</th>
-                        <th class="table-tender">Trạng thái</th>
-                        <th class="table-tender">Giá (VNĐ)</th>
-                        <th class="table-tender">Giao cho công ty</th>
-                        <th class="table-tender">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in tenderInExecutionDTOs)
-                    {
-                        <tr>
-                            <td class="table-tender">@($"#000{item.TenderId}")</td>
-                            <td class="table-tender">@item.TenderName</td>
-                            <td class="table-tender">
-                                @foreach (var machine in item.ConstructionMachines)
-                                {
-                                    <div style="display: block;">@machine.Name - @machine.SerialNumber - @machine.Brand</div>
-                                }
-                            </td>
-                            <td class="table-tender">@item.From</td>
-                            <td class="table-tender">@item.To</td>
-                            <td class="table-tender">@item.PickUpDate.ToString("dd-MM-yyyy hh:mm:s tt")</td>
-                            <td class="table-tender">@item.DeliveryDate.ToString("dd-MM-yyyy hh:mm:s tt")</td>
-                            <td class="table-tender">@item.CompanyShipperName</td>
-                            <td class="table-tender">@item.Status</td>
-                            <td class="table-tender">@item.Price.ToString("N0")</td>
-                            <td class="table-tender">@item.CompanyCarrierName</td>
-                            <td class="table-tender">
-                                <span>
-                                    <button style="margin-right:5px;" class="btn btn-outline-success" @onclick="() => TenderDetails(item.TenderId)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
-                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
-                                        </svg>
-                                    </button>
-                                    @if (nav.Uri.Contains("InExecution"))
-                                    {
-                                        <ConfirmCompleteTender Company="companyRole" TenderId="item.TenderId" Finish="Finish"></ConfirmCompleteTender>
-                                    }
-                                </span>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="table-tender">Số hiệu thầu</th>
+                                <th class="table-tender">Tên thầu</th>
+                                <th class="table-tender">Danh sách máy</th>
+                                <th class="table-tender">Địa chỉ nhận</th>
+                                <th class="table-tender">Địa chỉ giao</th>
+                                <th class="table-tender">Thời gian nhận muộn nhất</th>
+                                <th class="table-tender">Thời gian giao muộn nhất</th>
+                                <th class="table-tender">Công ty tạo thầu</th>
+                                <th class="table-tender">Trạng thái</th>
+                                <th class="table-tender">Giá (VNĐ)</th>
+                                <th class="table-tender">Giao cho công ty</th>
+                                <th class="table-tender">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in tenderInExecutionDTOs)
+                            {
+                                <tr>
+                                    <td class="table-tender">@($"#000{item.TenderId}")</td>
+                                    <td class="table-tender">@item.TenderName</td>
+                                    <td class="table-tender">
+                                        @foreach (var machine in item.ConstructionMachines)
+                                        {
+                                            <div style="display: block;">@machine.Name - @machine.SerialNumber - @machine.Brand</div>
+                                        }
+                                    </td>
+                                    <td class="table-tender">@item.From</td>
+                                    <td class="table-tender">@item.To</td>
+                                    <td class="table-tender">@item.PickUpDate.ToString("dd-MM-yyyy hh:mm:s tt")</td>
+                                    <td class="table-tender">@item.DeliveryDate.ToString("dd-MM-yyyy hh:mm:s tt")</td>
+                                    <td class="table-tender">@item.CompanyShipperName</td>
+                                    <td class="table-tender">@item.Status</td>
+                                    <td class="table-tender">@item.Price.ToString("N0")</td>
+                                    <td class="table-tender">@item.CompanyCarrierName</td>
+                                    <td class="table-tender">
+                                        <span>
+                                            <button style="margin-right:5px;" class="btn btn-outline-success" @onclick="() => TenderDetails(item.TenderId)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                                </svg>
+                                            </button>
+                                            @if (nav.Uri.Contains("InExecution"))
+                                            {
+                                                var companyId = context.User.FindFirstValue("CompanyId");
+                                                @if (int.TryParse(companyId, out int int_companyId))
+                                                {
+                                                    <ConfirmCompleteTender Bids=@item.Bids Company="companyRole" TenderId="item.TenderId" Finish="Finish"></ConfirmCompleteTender>
+                                                }
+                                            }
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
 
-        <div class="float-end">
-            <Pagination ActivePageNumber="@searchDTO.pageIndex"
-                        TotalPages="TotalPage"
-                        DisplayPages="2"
-                        FirstLinkIcon="IconName.ChevronDoubleLeft"
-                        PreviousLinkIcon="IconName.ChevronLeft"
-                        NextLinkIcon="IconName.ChevronRight"
-                        LastLinkIcon="IconName.ChevronDoubleRight"
-                        PageChanged="OnPageChangedAsync" />
+                <div class="float-end">
+                    <Pagination ActivePageNumber="@searchDTO.pageIndex"
+                                TotalPages="TotalPage"
+                                DisplayPages="2"
+                                FirstLinkIcon="IconName.ChevronDoubleLeft"
+                                PreviousLinkIcon="IconName.ChevronLeft"
+                                NextLinkIcon="IconName.ChevronRight"
+                                LastLinkIcon="IconName.ChevronDoubleRight"
+                                PageChanged="OnPageChangedAsync" />
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+    </Authorized>
+</AuthorizeView>
 @code {
     private HubConnection hubConnection;
     public List<TenderInExecutionDTO> tenderInExecutionDTOs { get; set; } = new();
