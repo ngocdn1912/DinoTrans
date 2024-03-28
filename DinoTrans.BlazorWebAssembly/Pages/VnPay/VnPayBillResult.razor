@@ -1,4 +1,5 @@
 ﻿@page "/VnPayreturn"
+@page "/VnPayReturnFromAdminToCarrier"
 @inject NavigationManager nav
 @inject IVnPayService VnpayService
 @inject IJSRuntime js
@@ -80,13 +81,26 @@
 
     <div class="card-footer">
         <div class="float-end">
-            @if (vnp_TransactionStatus == "00" && vnp_ResponseCode == "00")
+            @if (!nav.Uri.Contains("/VnPayReturnFromAdminToCarrier"))
             {
-                <button class="btn btn-primary" @onclick="GotoTendersInExecution">Đi tới thầu đang vận chuyển</button>
-            }
-            else
+                @if (vnp_TransactionStatus == "00" && vnp_ResponseCode == "00")
+                {
+                    <button class="btn btn-primary" @onclick="GotoTendersInExecution">Đi tới thầu đang vận chuyển</button>
+                }
+                else
+                {
+                    <button class="btn btn-danger" @onclick="GoToToAssigns">Đi tới thầu đang chọn lựa</button>
+                }
+            }else
             {
-                <button class="btn btn-danger" @onclick="GoToToAssigns">Đi tới thầu đang vận chuyển</button>
+                @if (vnp_TransactionStatus == "00" && vnp_ResponseCode == "00")
+                {
+                    <button class="btn btn-primary" @onclick="GotoTendersCompleted">Đi tới thầu đã hoàn tất</button>
+                }
+                else
+                {
+                    <button class="btn btn-danger" @onclick="GotoTendersInExecution">Đi tới thầu đang vận chuyển</button>
+                }
             }
         </div>
     </div>
@@ -169,27 +183,49 @@
         {
             if (int.TryParse(vnp_TxnRef.Split("_")[0], out int TenderBidId))
             {
-                var result = await VnpayService.GetDataReturn_ShipperToAdminDinoTrans(new Bill
-                    {
-                        TenderBidId = TenderBidId,
-                        BillType = BillTypeEnum.ShipperToAdminDinoTrans,
-                        vnp_Amount = vnp_Amount,
-                        vnp_BankCode = vnp_BankCode,
-                        vnp_BankTranNo = vnp_BankTranNo,
-                        vnp_CardType = vnp_CardType,
-                        vnp_OrderInfo = vnp_OrderInfo,
-                        vnp_PayDate = vnp_PayDate,
-                        vnp_TmnCode = vnp_TmnCode,
-                        vnp_TransactionNo = vnp_TransactionNo,
-                        vnp_TransactionStatus = vnp_TransactionStatus,
-                        vnp_TxnRef = vnp_TxnRef,
-                        vnp_SecureHash = vnp_SecureHash,
-                        vnp_ResponseCode = vnp_ResponseCode
-                    }, new ApplicationUser
-                    {
-                        FirstName = "",
-                        LastName = ""
-                    });
+                if (!nav.Uri.Contains("VnPayReturnFromAdminToCarrier"))
+                {
+                    var result = await VnpayService.GetDataReturn_ShipperToAdminDinoTrans(new Bill
+                        {
+                            TenderBidId = TenderBidId,
+                            BillType = BillTypeEnum.ShipperToAdminDinoTrans,
+                            vnp_Amount = vnp_Amount,
+                            vnp_BankCode = vnp_BankCode,
+                            vnp_BankTranNo = vnp_BankTranNo,
+                            vnp_CardType = vnp_CardType,
+                            vnp_OrderInfo = vnp_OrderInfo,
+                            vnp_PayDate = vnp_PayDate,
+                            vnp_TmnCode = vnp_TmnCode,
+                            vnp_TransactionNo = vnp_TransactionNo,
+                            vnp_TransactionStatus = vnp_TransactionStatus,
+                            vnp_TxnRef = vnp_TxnRef,
+                            vnp_SecureHash = vnp_SecureHash,
+                            vnp_ResponseCode = vnp_ResponseCode
+                        }, new ApplicationUser
+                        {
+                            FirstName = "",
+                            LastName = ""
+                        });
+                }else
+                {
+                    var result = await VnpayService.GetDataReturn_AdminDinoTransToCarrier(new Bill
+                        {
+                            TenderBidId = TenderBidId,
+                            BillType = BillTypeEnum.AdminDinoTransToCarrier,
+                            vnp_Amount = vnp_Amount,
+                            vnp_BankCode = vnp_BankCode,
+                            vnp_BankTranNo = vnp_BankTranNo,
+                            vnp_CardType = vnp_CardType,
+                            vnp_OrderInfo = vnp_OrderInfo,
+                            vnp_PayDate = vnp_PayDate,
+                            vnp_TmnCode = vnp_TmnCode,
+                            vnp_TransactionNo = vnp_TransactionNo,
+                            vnp_TransactionStatus = vnp_TransactionStatus,
+                            vnp_TxnRef = vnp_TxnRef,
+                            vnp_SecureHash = vnp_SecureHash,
+                            vnp_ResponseCode = vnp_ResponseCode
+                        });
+                }
             }
         }
     }
@@ -197,6 +233,11 @@
     public void GotoTendersInExecution()
     {
         nav.NavigateTo("/Tenders/InExecution");
+    }
+
+    public void GotoTendersCompleted()
+    {
+        nav.NavigateTo("/Tenders/Completed");
     }
 
     public void GoToToAssigns()

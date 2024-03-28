@@ -490,7 +490,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var tenderInExecution = (from t in _tenderRepository.AsNoTracking()
                                     .Where(t => t.TenderStatus == TenderStatuses.Completed
-                                    && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId))
+                                    && (t.CompanyCarrierId == currentUser!.CompanyId 
+                                    || t.CompanyShipperId == currentUser!.CompanyId
+                                    || companyRole == CompanyRoleEnum.Admin))
                                      join tb in _tenderBidRepository.AsNoTracking() on t.Id equals tb.TenderId
                                      join tc in _tenderConstructionMachineRepository.AsNoTracking() on t.Id equals tc.TenderId
                                      join c in _contructionMachineRepository.AsNoTracking() on tc.ContructionMachineId equals c.Id
@@ -594,7 +596,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var inexeTenders = _tenderRepository.AsNoTracking().Include(t => t.CompanyCarrier).Include(t => t.CompanyShipper)
                                     .Where(t => t.TenderStatus == TenderStatuses.Completed
-                                    && (t.CompanyCarrierId == currentUser!.CompanyId || t.CompanyShipperId == currentUser!.CompanyId)).ToList();
+                                    && (t.CompanyCarrierId == currentUser!.CompanyId 
+                                    || t.CompanyShipperId == currentUser!.CompanyId
+                                    || companyRole == CompanyRoleEnum.Admin)).ToList();
 
             if (companyRole == CompanyRoleEnum.Shipper)
                 inexeTenders = inexeTenders.Where(t => t.CompanyShipperId == currentUser!.CompanyId).ToList();
@@ -1003,7 +1007,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 if (newTenderToAssignDTO.Bids.Count > 0)
                 {
                     if ((currentUserCompany!.Role == CompanyRoleEnum.Carrier && newTenderToAssignDTO.Bids.Any(tb => tb.CompanyCarrierId == currentUser!.CompanyId))
-                        || (currentUserCompany!.Role == CompanyRoleEnum.Shipper))
+                        || (currentUserCompany!.Role == CompanyRoleEnum.Shipper)
+                        || (currentUserCompany!.Role == CompanyRoleEnum.Admin))
                         listTenderToAssignDTO.Add(newTenderToAssignDTO);
                 }
             }
