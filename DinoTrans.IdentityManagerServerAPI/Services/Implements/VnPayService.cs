@@ -199,7 +199,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 var company = await _companyService.GetCompanyByCurrentUserId(adminUser!);
 
                 //Get Config Info
-                string vnp_Returnurl = _configuration.GetSection("AppSettings:ReturnVnPayUrl").Value!; //URL nhan ket qua tra ve 
+                string vnp_Returnurl = _configuration.GetSection("AppSettings:ReturnVnPayUrlFromAdminToCarrier").Value!; //URL nhan ket qua tra ve 
                 string vnp_Url = _configuration.GetSection("AppSettings:TransacVnPayUrl").Value!; //URL thanh toan cua VNPAY 
                 string vnp_TmnCode = _configuration.GetSection("AppSettings:TmnCode").Value!; //Ma định danh merchant kết nối (Terminal Id)
                 string vnp_HashSecret = _configuration.GetSection("AppSettings:HashSecret").Value!; //Secret Key
@@ -221,7 +221,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 var locale = string.Empty;
 
                 vnpay.AddRequestData("vnp_Locale", !string.IsNullOrEmpty(locale) ? locale : "vn");
-                vnpay.AddRequestData("vnp_OrderInfo", $"AdminDinoTrans thanh toan tien cho ben van chuyen cong ty {company.Data.CompanyName} hoa don cua thau so #000{tenderBid.TenderId}");
+                vnpay.AddRequestData("vnp_OrderInfo", $"AdminDinoTrans thanh toán tiền cho bên vận chuyển công ty {company.Data.CompanyName} hóa đơn của thầu số #000{tenderBid.TenderId}");
                 vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
 
                 vnpay.AddRequestData("vnp_ReturnUrl", vnp_Returnurl);
