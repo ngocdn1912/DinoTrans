@@ -1,4 +1,5 @@
 ﻿using DinoTrans.Shared.DTOs;
+using DinoTrans.Shared.DTOs.SearchDTO;
 using DinoTrans.Shared.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace DinoTrans.Shared.Services.Interfaces
 {
     public interface IBillService
     {
-        public Task<ResponseModel<List<Bill>>> GetAllBills(ApplicationUser _currentUser);
-        public Task<ResponseModel<Bill>> GetBillDetail(int BillId);
+        public Task<ResponseModel<List<BillDTO>>> GetAllBills(SearchBill model, ApplicationUser _currentUser);
+        public Task<ResponseModel<BillDTO>> GetBillDetail(int BillId);
     }
 }

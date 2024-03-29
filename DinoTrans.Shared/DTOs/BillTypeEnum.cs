@@ -9,6 +9,7 @@ namespace DinoTrans.Shared.DTOs
     public enum BillTypeEnum
     {
         ShipperToAdminDinoTrans,
-        AdminDinoTransToCarrier
+        AdminDinoTransToCarrier,
+        ErrorConvert
     }
 }

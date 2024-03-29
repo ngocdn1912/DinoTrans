@@ -96,6 +96,7 @@ builder.Services.AddSingleton<TenderServiceFactory>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<IBillService, BillService>();
 
 
 builder.Services.AddHostedService<TenderBackgroundService>();
