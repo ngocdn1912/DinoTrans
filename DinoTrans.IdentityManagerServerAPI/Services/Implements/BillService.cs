@@ -133,20 +133,20 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             if (currentUserCompany.Data.Role == CompanyRoleEnum.Carrier)
             {
-                data = data
+               /* data = data
                 .Where(t => t.CompanyCarrierId == _currentUser.CompanyId
-                && t.BillType == BillTypeEnum.ShipperToAdminDinoTrans);
+                && t.BillType == BillTypeEnum.ShipperToAdminDinoTrans);*/
 
                 return new ResponseModel<List<BillDTO>>
                 {
-                    Data = data.ToList(),
+                    /*Data = data.ToList(),*/
                     Success = true
                 };
             }
 
             return new ResponseModel<List<BillDTO>>
             {
-                Data = data.ToList(),
+                /*Data = data.ToList(),*/
                 Success = true
             };
         }
