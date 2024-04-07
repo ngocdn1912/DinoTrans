@@ -130,5 +130,13 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             var response = await _userService.DeleteUserAccount(userId);
             return Ok(response);
         }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetUserByRole([FromQuery] string role)
+        {
+            var response = await _userService.GetUserByRole(role);
+            return Ok(response);
+        }
     }
 }

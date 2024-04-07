@@ -243,5 +243,24 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<GeneralResponse>(apiResponse);
         }
+
+        public async Task<ResponseModel<List<ApplicationUser>>> GetUserByRole(string role)
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetUserByRole?role={role}");
+
+            //Read Response
+            if (!response.IsSuccessStatusCode) return new ResponseModel<List<ApplicationUser>>
+            {
+                Success = false,
+                ResponseCode = "500",
+                Message = "Internal Server Error"
+            };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<List<ApplicationUser>>>(apiResponse);
+        }
     }
 }

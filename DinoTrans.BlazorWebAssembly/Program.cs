@@ -35,6 +35,8 @@ builder.Services.AddScoped<IDashboardService, DashboardServiceClient>();
 builder.Services.AddScoped<ICompanyService, CompanyClientService>();
 builder.Services.AddScoped<IVnPayService, VnPayClientService>();
 builder.Services.AddScoped<IFileClientService, FileClientService>();
+builder.Services.AddScoped<IBillService, BillClientService>();
+
 
 
 builder.Services.AddMudServices();

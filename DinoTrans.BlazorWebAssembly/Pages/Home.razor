@@ -122,7 +122,7 @@
                                 @dashboardForShipper.TotalSuccessTenderMoney.ToString("N0")
                             </div>
                             <div>
-                                Tổng tiền nhận được (VNĐ)
+                                Tổng tiền phải trả cho bên vận chuyển (VNĐ)
                             </div>
                         </div>
                     </div>
@@ -151,14 +151,15 @@
                         <RadzenGridLines Visible="true" />
                         <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
                     </RadzenValueAxis>
+                    <RadzenCategoryAxis>
+                        <RadzenAxisTitle Text="Tên công ty" />
+                    </RadzenCategoryAxis>
                     <RadzenBarOptions Radius="5" />
                 </RadzenChart>
             </div>
          </div>
     </div>
 }
-
-
 
 @code{
     private readonly ApplicationUser applicationUser;
@@ -206,6 +207,11 @@
             dashboardForShipper = result.Data;
             _currentUser = result.Data.AdminInfo;
             listMoneyByCompany = result.Data.StatisticByCompany;
+            listMoneyByCompany.Add(new TotalMoneyByCompany
+            {
+                TotalMoney = result.Data.TotalMoneyForAdmin,
+                CompanyName = _currentUser.Company!.CompanyName,
+            });
         }
         else
         {

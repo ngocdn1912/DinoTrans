@@ -12,5 +12,6 @@ namespace DinoTrans.Shared.Services.Interfaces
     public interface IDashboardService
     {
         Task<ResponseModel<DashboardForShipper>> GetDashBoardForShipper(ApplicationUser _currentUser);
+        Task<ResponseModel<DashboardForAdmin>> GetDashBoardForAdmin();
     }
 }

@@ -29,5 +29,6 @@ namespace DinoTrans.Shared.Services.Interfaces
         Task<ResponseModel<List<GetEmployeeOfACompany>>> GetAllEmployeesOfACompany(SearchModel dto, ApplicationUser _currentCompanyShipperAdmin);
         Task<GeneralResponse> UpdateAccountForUserOfCompany(UpdateAccountForUserOfCompany dto);
         Task<GeneralResponse> DeleteUserAccount(int UserId);
+        Task<ResponseModel<List<ApplicationUser>>> GetUserByRole(string role);
     }
 }

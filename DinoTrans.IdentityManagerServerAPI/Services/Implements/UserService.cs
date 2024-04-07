@@ -553,5 +553,24 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _userRepository.SaveChange();
             return new GeneralResponse(true, "Xóa nhân viên thành công");
         }
+
+        public async Task<ResponseModel<List<ApplicationUser>>> GetUserByRole(string Role)
+        {
+            var user = (await _userManager.GetUsersInRoleAsync(Role)).ToList();
+            if(user == null)
+            {
+                return new ResponseModel<List<ApplicationUser>>
+                {
+                    Success = false,
+                    Message = "Không thể tìm user"
+                };
+            }
+
+            return new ResponseModel<List<ApplicationUser>>
+            {
+                Success = true,
+                Data = user
+            };
+        }
     }
 }

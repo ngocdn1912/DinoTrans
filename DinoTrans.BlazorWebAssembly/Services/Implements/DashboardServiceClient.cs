@@ -38,5 +38,10 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<ResponseModel<DashboardForShipper>>(apiResponse);
         }
+
+        public Task<ResponseModel<DashboardForAdmin>> GetDashBoardForAdmin()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

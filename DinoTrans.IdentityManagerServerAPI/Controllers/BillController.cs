@@ -40,5 +40,12 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             var result = await _billService.GetAllBills(modl, _currentUser);
             return Ok(result);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetBillDetail(int BillId)
+        {
+            var result = await _billService.GetBillDetail(BillId);
+            return Ok(result);
+        }
     }
 }

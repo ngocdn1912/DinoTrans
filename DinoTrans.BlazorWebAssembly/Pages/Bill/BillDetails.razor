@@ -1,0 +1,188 @@
+﻿@inject IUserService UserService
+@inject ICompanyService CompanyService
+@inject IBillService BillService
+@page "/Bills/Details/BillId={BillId:int}"
+<div class="card">
+    <div class="card-header text-center">
+        <div class="row col-md-12">
+            <div class="col-md-5">
+                <img src="/images/logo2.png" style="max-width: 120px; max-height:120px;" />
+                <div class="text-center"><b>Chuyên trung gian vận chuyển các loại máy xây dựng</b></div>
+            </div>
+            <div class="col-md-2">
+                
+            </div>
+            <div class="col-md-5">
+                <br />
+                <div class="text-center">
+                    @AdminCompany.CompanyName
+                </div>
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-telephone-fill" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z" />
+                    </svg>
+                    @AdminCompany.PhoneNumber
+                </div>
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-building-fill" viewBox="0 0 16 16">
+                        <path d="M3 0a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h3v-3.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V16h3a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1zm1 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3.5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5M4 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zM7.5 5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5m2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zM4.5 8h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5m2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3.5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5" />
+                    </svg>
+                    @AdminCompany.Address
+                </div>
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope-fill" viewBox="0 0 16 16">
+                        <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414zM0 4.697v7.104l5.803-3.558zM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586zm3.436-.586L16 11.801V4.697z" />
+                    </svg>
+                    @AdminCompany.Email
+                </div>
+            </div>
+        </div>
+        <div class="text-center" style="color:#2fac66; font-size:30px;">
+            HÓA ĐƠN THANH TOÁN VẬN CHUYỂN
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <td>Loại dữ liệu</td>
+                    <td>Giá trị</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Mã ngân hàng</td>
+                    @if (@billData.BankCode != null)
+                    {
+                        <td>@billData.BankCode</td>
+                    }
+                </tr>
+                <tr>
+                    <td>Mã giao dịch tại ngân hàng</td>
+                    @if (@billData.BankTransNo != null)
+                    {
+                        <td>@billData.BankTransNo</td>
+                    }
+                </tr>
+                <tr>
+                    <td>Mã giao dịch ghi nhận tại hệ thống VNPAY</td>
+                    @if (@billData.TransactionNo != null)
+                    {
+                        <td>@billData.TransactionNo</td>
+                    }
+                </tr>
+                <tr>
+                    <td>Loại thẻ</td>
+                    @if (@billData.CardType != null)
+                    {
+                        <td>@billData.CardType</td>
+                    }
+                </tr>
+                <tr>
+                    <td>Thông tin thanh toán</td>
+                    @if (@billData.OrderInfo != null)
+                    {
+                        <td>@billData.OrderInfo</td>
+                    }
+                </tr>
+                <tr>
+                    <td>Số tiền</td>
+                    @{
+                        @if (@billData != null && @billData.Amount != null)
+                        {
+                            var amount = (float)@billData.Amount;
+                            <td>@amount.ToString("N0") (VNĐ)</td>
+                        }
+                    }
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-footer">
+        <div class="float-end">
+            @{
+                @if (billData != null && billData.PayDate != null)
+                {
+                    var dateTime = (DateTime)billData.PayDate != null ? (DateTime)billData.PayDate : default;
+                    @if (dateTime != default)
+                    {
+                        <div>Ngày @dateTime.Day tháng @dateTime.Month năm @dateTime.Year</div>
+                    }else
+                    {
+                        <div></div>
+                    }
+                }
+            }
+        </div>
+        <div class="col-md-12 row text-center">
+            @if (billData.BillType != null && CompanyCarrier != null && AdminCompany != null && CompanyCarrier != null)
+            {
+                <div class="col-md-3">
+                    <div>Bên chuyển tiền</div>
+                    @if (billData.BillType == BillTypeEnum.ShipperToAdminDinoTrans)
+                    {
+                        <div>Đại diện công ty thuê vận chuyển @CompanyShipper.CompanyName ký và ghi rõ họ tên</div>
+                    }
+                    else if (billData.BillType == BillTypeEnum.AdminDinoTransToCarrier)
+                    {
+                        <div>Đại diện công ty trung gian @AdminCompany.CompanyName ký và ghi rõ họ tên</div>
+                    }
+                </div>
+                <div class="col-md-3">
+                    <div>Hình thức thanh toán</div>
+                    <div>Chuyển khoản</div>
+                </div>
+                <div class="col-md-3">
+                    <div>Bên nhận tiền</div>
+                    @if (billData.BillType == BillTypeEnum.ShipperToAdminDinoTrans)
+                    {
+                        <div>Đại diện công ty trung gian @AdminCompany.CompanyName ký và ghi rõ họ tên</div>
+                    }
+                    else if (billData.BillType == BillTypeEnum.AdminDinoTransToCarrier)
+                    {
+                        <div>Đại diện công ty vận chuyển @CompanyCarrier.CompanyName ký và ghi rõ họ tên</div>
+                    }
+            </div>
+            }
+        </div>
+        <br />
+        <br />
+    </div>
+</div>
+
+@code{
+    [Parameter]
+    public int BillId {get;set;} 
+    public AuthenticationState? authState = null;
+    public ApplicationUser Admin = new ApplicationUser
+    {
+        FirstName = "",
+        LastName = ""
+    };
+    public BillDTO billData { get; set; } = new();
+    public Company AdminCompany { get; set; } = new Company();
+    public Company CompanyShipper { get; set; } = new Company();
+    public Company CompanyCarrier { get; set; } = new Company();
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await UserService.GetUserByRole(Role.DinoTransAdmin);
+        if(result.Success)
+        {
+            Admin = result.Data.FirstOrDefault();
+            var companyResult = await CompanyService.GetCompanyByCompanyId((int)Admin.CompanyId);
+            if(companyResult.Success)
+            {
+                AdminCompany = companyResult.Data;
+            }
+        }
+
+        var billResult = await BillService.GetBillDetail(BillId);
+        if(billResult.Success)
+        {
+            billData = billResult.Data;
+        }
+        CompanyShipper = (await CompanyService.GetCompanyByCompanyId(billData.CompanyShipperId)).Data;
+        CompanyCarrier = (await CompanyService.GetCompanyByCompanyId(billData.CompanyCarrierId)).Data;
+    }
+}

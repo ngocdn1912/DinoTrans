@@ -8,6 +8,7 @@ using DinoTrans.Shared.DTOs.SearchDTO;
 using System.Globalization;
 using NHibernate.Util;
 using Microsoft.IdentityModel.Tokens;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 {
@@ -51,6 +52,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                         
                         select new
                         {
+                            BillId = bbills.Id != null ? bbills.Id:default,
                             TenderId = t.Id,
                             Name = t.Name,
                             Amount = bbills.vnp_Amount != null ? (float)bbills.vnp_Amount : default,
@@ -59,7 +61,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                             BankTransNo = bbills.vnp_BankTranNo != null ? bbills.vnp_BankTranNo : "",
                             CardType = bbills.vnp_CardType != null ? bbills.vnp_CardType : "",
                             OrderInfo = bbills.vnp_OrderInfo != null ? bbills.vnp_OrderInfo : "",
-                            PayDate = bbills.vnp_PayDate != null ? bbills.vnp_PayDate : default,                     
+                            PayDate = bbills.vnp_PayDate != null ? bbills.vnp_PayDate : null,     
+                            TransactionNo = bbills.vnp_TransactionNo != null ? bbills.vnp_TransactionNo : "",
                             CompanyShipperId = t.CompanyShipperId,
                             CompanyCarrierId = t.CompanyCarrierId != null ? (int)t.CompanyCarrierId : default,
                         }).ToList();
@@ -71,6 +74,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 {
                     listBillDTO.Add(new BillDTO
                     {
+                        BillId = item.BillId,
                         TenderId = item.TenderId,
                         Name = item.Name,
                         Amount = item.Amount,
@@ -81,13 +85,15 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                         OrderInfo = item.OrderInfo,
                         PayDate = result1,
                         CompanyCarrierId = item.CompanyCarrierId,
-                        CompanyShipperId = item.CompanyShipperId
+                        CompanyShipperId = item.CompanyShipperId,
+                        TransactionNo = item.TransactionNo
                     });
                 }
                 else
                 {
                     listBillDTO.Add(new BillDTO
                     {
+                        BillId = item.BillId,
                         TenderId = item.TenderId,
                         Name = item.Name,
                         Amount = item.Amount,
@@ -98,28 +104,72 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                         OrderInfo = item.OrderInfo,
                         PayDate = null,
                         CompanyCarrierId = item.CompanyCarrierId,
-                        CompanyShipperId = item.CompanyShipperId
+                        CompanyShipperId = item.CompanyShipperId,
+                        TransactionNo = item.TransactionNo,
                     });
                 }
             }
-            if (currentUserCompany.Data.Role == CompanyRoleEnum.Shipper)
+            
+            if (currentUserCompany.Data.Role == CompanyRoleEnum.Admin)
+            {
+                listBillDTO = listBillDTO
+                 .Where(t => string.IsNullOrEmpty(model.SearchText)
+                     || t.Name.Contains(model.SearchText)
+                     || $"#000{t.TenderId}".Contains(model.SearchText)
+                     || (t.BankCode != null ? t.BankCode.Contains(model.SearchText) : true)
+                     || (t.BankTransNo != null ? t.BankTransNo.Contains(model.SearchText) : true)
+                     || (t.CardType != null ? t.CardType.Contains(model.SearchText) : true)
+                     || (t.TransactionNo != null ? t.TransactionNo.Contains(model.SearchText) : true)
+                     || (t.OrderInfo != null ? t.OrderInfo.Contains(model.SearchText) : true))
+                 .ToList();
+
+                if (model.FromDate != null)
+                    listBillDTO = listBillDTO.Where(l => l.PayDate != null && l.PayDate >= model.FromDate).ToList();
+
+                if (model.ToDate != null)
+                    listBillDTO = listBillDTO.Where(l => l.PayDate != null && l.PayDate <= model.ToDate).ToList();
+
+                switch(model.BillType)
+                {
+                    case BillTypeSearchModel.All:
+                        break;
+                    case BillTypeSearchModel.ShipperToAdmin:
+                        listBillDTO = listBillDTO.Where(l => l.BillType == BillTypeEnum.ShipperToAdminDinoTrans).ToList();
+                        break;
+                    case BillTypeSearchModel.AdminToCarrier:
+                        listBillDTO = listBillDTO.Where(l => l.BillType == BillTypeEnum.AdminDinoTransToCarrier).ToList();
+                        break;
+                }    
+
+                switch(model.AmountType)
+                {
+                    case AmountTypeSearchModel.All : break;
+                    case AmountTypeSearchModel.LessThan5M:
+                        listBillDTO = listBillDTO.Where(l => l.Amount != null && l.Amount < 5000000).ToList();
+                        break;
+                    case AmountTypeSearchModel.From5MTo10M:
+                        listBillDTO = listBillDTO.Where(l => l.Amount != null && l.Amount <= 10000000 && l.Amount >= 5000000).ToList();
+                        break;
+                    case AmountTypeSearchModel.MoreThan10M:
+                        listBillDTO = listBillDTO.Where(l => l.Amount != null && l.Amount > 10000000).ToList();
+                        break;
+                }
+
+                
+            }else if (currentUserCompany.Data.Role == CompanyRoleEnum.Carrier)
+            {
+                listBillDTO = listBillDTO
+                 .Where(t => t.CompanyCarrierId == _currentUser.CompanyId
+                 && t.BillType == BillTypeEnum.AdminDinoTransToCarrier).ToList();
+            }else if (currentUserCompany.Data.Role == CompanyRoleEnum.Shipper)
             {
                 listBillDTO = listBillDTO
                 .Where(t => t.CompanyShipperId == _currentUser.CompanyId
-                && t.BillType == BillTypeEnum.ShipperToAdminDinoTrans
-                && (model.SearchText.IsNullOrEmpty()
-                    || t.Name.Contains(model.SearchText)
-                    || $"#000{t.TenderId}".Contains(model.SearchText)
-                    || (t.BankCode != null ? t.BankCode.Contains(model.SearchText) : true)
-                    || (t.BankTransNo != null ? t.BankTransNo.Contains(model.SearchText) : true)
-                    || (t.CardType != null ? t.CardType.Contains(model.SearchText) : true)
-                    || (t.OrderInfo != null ? t.OrderInfo.Contains(model.SearchText) : true))
-                && (model.FromDate != null || t.PayDate >= model.FromDate)
-                && (model.ToDate != null || t.PayDate <= model.ToDate))
-                .ToList();
+                && t.BillType == BillTypeEnum.ShipperToAdminDinoTrans).ToList();
+            }
 
-                var listPaging = listBillDTO
-                    .Skip((model.pageIndex-1)*model.pageSize)
+            var listPaging = listBillDTO
+                    .Skip((model.pageIndex - 1) * model.pageSize)
                     .Take(model.pageSize).ToList();
 
                 return new ResponseModel<List<BillDTO>>
@@ -129,31 +179,61 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     Total = listBillDTO.Count(),
                     PageCount = listBillDTO.Count() / 10 + 1
                 };
-            }
-
-            if (currentUserCompany.Data.Role == CompanyRoleEnum.Carrier)
-            {
-               /* data = data
-                .Where(t => t.CompanyCarrierId == _currentUser.CompanyId
-                && t.BillType == BillTypeEnum.ShipperToAdminDinoTrans);*/
-
-                return new ResponseModel<List<BillDTO>>
-                {
-                    /*Data = data.ToList(),*/
-                    Success = true
-                };
-            }
-
-            return new ResponseModel<List<BillDTO>>
-            {
-                /*Data = data.ToList(),*/
-                Success = true
-            };
         }
 
         public async Task<ResponseModel<BillDTO>> GetBillDetail(int BillId)
         {
-            throw new NotImplementedException();
+            var bill = (from b in _billRepository.AsNoTracking().Where(b => b.Id == BillId)
+                       join tb in _tenderBidRepository.AsNoTracking() on b.TenderBidId equals tb.Id
+                       join tender in _tenderRepository.AsNoTracking() on tb.TenderId equals tender.Id
+                       select new
+                       {
+                           TenderId = tender.Id,
+                           Name = tender.Name,
+                           Amount = b.vnp_Amount != null ? b.vnp_Amount! : default,
+                           BillType = b.BillType != null ? b.BillType : BillTypeEnum.ErrorConvert,
+                           BankCode = b.vnp_BankCode != null ? b.vnp_BankCode : default,
+                           BankTransNo = b.vnp_BankTranNo != null ? b.vnp_BankTranNo : default,
+                           CardType = b.vnp_CardType != null ? b.vnp_CardType : default,
+                           OrderInfo = b.vnp_OrderInfo != null ? b.vnp_OrderInfo : default,
+                           PayDate = b.vnp_PayDate != null ? b.vnp_PayDate : default,
+                           TransactionNo = b.vnp_TransactionNo != null ? b.vnp_TransactionNo : default,
+                           CompanyShipperId = tender.CompanyShipperId,
+                           CompanyCarrierId = tender.CompanyCarrierId != null ? (int)tender.CompanyCarrierId : default
+                       }).FirstOrDefault();
+
+            if (bill == null)
+                return new ResponseModel<BillDTO>
+                {
+                    Success = false,
+                    Message = $"Không tìm thấy bill với Id = {BillId}"
+                };
+
+            var billDTO = new BillDTO();
+            if (DateTime.TryParseExact(bill.PayDate, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result1))
+            {
+                
+                billDTO.PayDate = result1;
+            }else
+            {
+                billDTO.PayDate = null;
+            }
+            billDTO.TenderId = bill.TenderId;
+            billDTO.Name = bill.Name;
+            billDTO.Amount = bill.Amount != null ? (float)bill.Amount : default;
+            billDTO.BillType = bill.BillType;
+            billDTO.BankCode = bill.BankCode;
+            billDTO.BankTransNo = bill.BankTransNo;
+            billDTO.CardType = bill.CardType;
+            billDTO.OrderInfo = bill.OrderInfo;
+            billDTO.TransactionNo = bill.TransactionNo;
+            billDTO.CompanyCarrierId = bill.CompanyCarrierId;
+            billDTO.CompanyShipperId = bill.CompanyShipperId;
+            return new ResponseModel<BillDTO>
+            {
+                Data = billDTO,
+                Success = true
+            };
         }
     }
 }

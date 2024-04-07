@@ -1,0 +1,123 @@
+﻿<div class="col-md-12 row">
+    <div class="col-md-4 column" style="padding-right:5px;">
+        <div>
+            <label class="form-label">
+                Tìm kiếm hóa đơn
+            </label>
+        </div>
+        <br />
+        <div>
+            <input type="text" placeholder="Tìm kiếm theo số hiệu thầu, tên thầu..." size="45" maxlength="45" @bind="searchDTO.SearchText" @oninput="SetSearchTextChange">
+        </div>
+    </div>
+
+    <div class="col-md-3 column">
+        <div>
+            <label class="form-label">
+                Lọc theo ngày thanh toán
+            </label>
+        </div>
+        <div class="col-md-12 row">
+            <div class="col-md-6">
+                <div>Từ ngày</div>
+                <input type="date" @oninput="SetFromDateChange" />
+            </div>
+            <div class="col-md-6">
+                <div>Tới ngày</div>
+                <input type="date" @oninput="SetToDateChange" />
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2 column">
+        <div>
+            <label class="form-label">
+                Lọc theo giá trị hóa đơn
+            </label>
+        </div>
+        <br />
+        <div>
+            <select title="Tất cả" @oninput="SetAmountChange">
+                <option value="0" label="Tất cả">Tất cả</option>
+                <option value="1" label="Dưới 5 triệu đồng">Dưới 5 triệu đồng</option>
+                <option value="2" label="Từ 5 tới 10 triệu đồng">Từ 5 tới 10 triệu đồng</option>
+                <option value="3" label="Trên 10 triệu đồng">Trên 10 triệu đồng</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="col-md-3 column">
+        <div>
+            <label class="form-label">
+                Lọc theo loại hóa đơn
+            </label>
+        </div>
+        <br />
+        <div>
+            <select title="Tất cả" @oninput="SetBillTypeChange">
+                <option value="0">Tất cả</option>
+                <option value="1">Từ bên Shipper cho bên Admin</option>
+                <option value="2">Từ bên Admin cho bên Carrier</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public DinoTrans.Shared.DTOs.SearchDTO.SearchBill searchDTO { get; set; }
+    [Parameter]
+    public EventCallback<DinoTrans.Shared.DTOs.SearchDTO.SearchBill> SearchBillCallBack { get; set; }
+    public async Task SetSearchTextChange(ChangeEventArgs e)
+    {
+        searchDTO.SearchText = e.Value.ToString();
+        searchDTO.pageIndex = 1;
+        await SearchBillCallBack.InvokeAsync(searchDTO);
+    }
+    public async Task SetAmountChange(ChangeEventArgs e)
+    {
+        if (AmountTypeSearchModel.TryParse(e.Value.ToString(), out AmountTypeSearchModel searchAmount))
+        {
+            searchDTO.AmountType = searchAmount;
+            searchDTO.pageIndex = 1;
+            await SearchBillCallBack.InvokeAsync(searchDTO);
+        }
+    }
+    public async Task SetBillTypeChange(ChangeEventArgs e)
+    {
+        if (BillTypeSearchModel.TryParse(e.Value.ToString(), out BillTypeSearchModel searchBilTypes))
+        {
+            searchDTO.BillType = searchBilTypes;
+            searchDTO.pageIndex = 1;
+            await SearchBillCallBack.InvokeAsync(searchDTO);
+        }
+    }
+
+    public async Task SetFromDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value.ToString(), out DateTime fromDateSearch))
+        {
+            searchDTO.FromDate = fromDateSearch;
+        }else
+        {
+            searchDTO.FromDate = null;
+        }
+        searchDTO.pageIndex = 1;
+        await SearchBillCallBack.InvokeAsync(searchDTO);
+    }
+
+    public async Task SetToDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value.ToString(), out DateTime toDateSearch))
+        {
+            searchDTO.ToDate = toDateSearch;
+            
+        }
+        else
+        {
+            searchDTO.ToDate = null;
+        }
+        searchDTO.pageIndex = 1;
+        await SearchBillCallBack.InvokeAsync(searchDTO);
+    }
+}

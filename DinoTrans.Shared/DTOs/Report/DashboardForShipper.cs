@@ -20,6 +20,7 @@ namespace DinoTrans.Shared.DTOs.Report
         public int CompletedTenderNumber { get;set; }
         public ApplicationUser AdminInfo { get;set; }
         public List<TotalMoneyByCompany> StatisticByCompany { get;set; }
+        public float TotalMoneyForAdmin { get; set; }
     }
 
     public class TotalMoneyByCompany
