@@ -22,6 +22,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         private readonly IUserRepository _userRepository;
         private readonly IBillRepository _billRepository;
         private readonly ICompanyRepository _companyRepository;
+        private readonly IRoleRepository _roleRepository;
         public DashboardService(ITenderRepository tenderRepository,
             ITenderBidRepository tenderBidRepository,
             IConstructionMachineRepository constructionMachineRepository,
@@ -29,7 +30,8 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             IUserRoleRepository userRoleRepository,
             IUserRepository userRepository,
             IBillRepository billRepository,
-            ICompanyRepository companyRepository) 
+            ICompanyRepository companyRepository,
+            IRoleRepository roleRepository) 
         {
             _tenderRepository = tenderRepository;
             _tenderBidRepository = tenderBidRepository;
@@ -39,52 +41,178 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             _userRepository = userRepository;
             _billRepository = billRepository;
             _companyRepository = companyRepository;
+            _roleRepository = roleRepository;
         }
 
         public async Task<ResponseModel<DashboardForAdmin>> GetDashBoardForAdmin()
         {
-            var companiesShipper = (from c in _companyRepository.AsNoTracking().Where(c => c.Role == CompanyRoleEnum.Shipper)
-                            join t in _tenderRepository.AsNoTracking() on c.Id equals t.CompanyShipperId
-                            join u in _userRepository.AsNoTracking() on c.Id equals u.CompanyId
-                            join m in _constructionMachineRepository.AsNoTracking() on c.Id equals m.CompanyShipperId
+            var companies = _companyRepository.Queryable();
+            var companiesShipper = from c in companies.Where(c => c.Role == CompanyRoleEnum.Shipper)
+                            join t in _tenderRepository.AsNoTracking().Where(t => t.TenderStatus == TenderStatuses.Completed) on c.Id equals t.CompanyShipperId
                             select new
                             {
-                                Id = c.Id,
+                                CompanyId = c.Id,
                                 CompanyName = c.CompanyName,                              
-                                TenderId = t.Id,
                                 Price = t.FinalPrice,
-                                UserId = u.Id,
-                                FirstName = u.FirstName,
-                                LastName = u.LastName,
-                                MachineId = m.Id
-                            }).ToList();
+                                Role = c.Role
+                            };
 
-            var totalShipperMoneyGroup = companiesShipper
+            var companiesCarrier = from c in companies.Where(c => c.Role == CompanyRoleEnum.Carrier)
+                                   join t in _tenderRepository.AsNoTracking().Where(t => t.TenderStatus == TenderStatuses.Completed) on c.Id equals t.CompanyCarrierId
+                                   select new
+                                   {
+                                       CompanyId = c.Id,
+                                       CompanyName = c.CompanyName,
+                                       Price = t.FinalPrice,
+                                       Role = c.Role
+                                   };
+
+            var usersInCompany = from c in companies
+                                 join u in _userRepository.AsNoTracking() on c.Id equals u.CompanyId
+                                 join ur in _userRoleRepository.AsNoTracking() on u.Id equals ur.UserId
+                                 join r in _roleRepository.AsNoTracking() on ur.RoleId equals r.Id
+                                 select new
+                                 {
+                                     CompanyId = c.Id,
+                                     UserId = u.Id,
+                                     FirstName = u.FirstName,
+                                     LastName = u.LastName,
+                                     Role = r.Name
+                                 };
+
+            var machinesInCompany = from c in companies
+                                    join mc in _constructionMachineRepository.AsNoTracking() on c.Id equals mc.CompanyShipperId
+                                    select new
+                                    {
+                                        CompanyId = c.Id,
+                                        MachineId = c.Id
+                                    };
+
+            var totalMoneyGroupByShipper = companiesShipper
                 .Select(c => new
                 {
-                    c.Id,
+                    c.CompanyId,
                     c.Price
                 })
-                .GroupBy(c => c.Id)
+                .GroupBy(c => c.CompanyId)
                 .Select(c => new
                 {
-                    Id = c.Key,
+                    CompanyId = c.Key,
                     TotalPrice = c.Sum(c => c.Price)
                 }).ToList();
 
-            foreach(var item in companiesShipper)
-            {
-                var newCompanyReport = new CompanyReport
+            var totalMoneyGroupByCarrier = companiesCarrier
+                .Select(c => new
                 {
-                    CompanyId = item.Id,
-                    CompanyName = item.CompanyName,
+                    c.CompanyId,
+                    c.Price
+                })
+                .GroupBy(c => c.CompanyId)
+                .Select(c => new
+                {
+                    CompanyId = c.Key,
+                    TotalPrice = c.Sum(c => c.Price)
+                }).ToList();
 
-                };
-            }    
+            var usersGroup = usersInCompany
+                .Select(u => new
+                {
+                    u.CompanyId,
+                    u.UserId,
+                    u.FirstName,
+                    u.LastName,
+                    u.Role
+                })
+                .GroupBy(u => u.CompanyId)
+                .Select(u => new
+                {
+                    CompanyId = u.Key,
+                    Users = u.ToList(),
+                    TotalUser = u.Count()
+                }).ToList();
+
+            var machinesGroup = machinesInCompany
+                .Select(c => new
+                {
+                    c.CompanyId,
+                    c.MachineId
+                })
+                .GroupBy(c => c.CompanyId)
+                .Select(c => new
+                {
+                    CompanyId = c.Key,
+                    TotalMachine = c.Count()
+                }).ToList();
+
+            var listCompanyReport = new List<CompanyReport>();
+            foreach (var item in companies)
+            {
+                if (item.Role == CompanyRoleEnum.Shipper)
+                {
+                    var resultItem = new CompanyReport
+                    {
+                        CompanyId = item.Id,
+                        CompanyName = item.CompanyName,
+                        Amount = (totalMoneyGroupByShipper != null && (float)totalMoneyGroupByShipper
+                                .Where(t => t.CompanyId == item.Id)
+                                .Select(t => t.TotalPrice).FirstOrDefault() != null) ?
+                                ((float)totalMoneyGroupByShipper
+                                .Where(t => t.CompanyId == item.Id)
+                                .Select(t => t.TotalPrice).FirstOrDefault() * item.ShipperFeePercentage /100) :
+                                0,
+                        UserCount = usersGroup
+                                .Where(u => u.CompanyId == item.Id)
+                                .Select(u => u.TotalUser)
+                                .FirstOrDefault(),
+                        AdminName = usersGroup
+                                .Where(u => u.CompanyId == item.Id)
+                                .Select(u => u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).FirstName
+                                + " " + u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).LastName)
+                                .FirstOrDefault(),
+                        MachineCount = machinesGroup
+                                       .Where(u => u.CompanyId == item.Id)
+                                       .Select(m => m.TotalMachine).FirstOrDefault(),
+                        CompanyRole = CompanyRoleEnum.Shipper
+
+                    };
+                    listCompanyReport.Add(resultItem);
+                }
+                else if(item.Role == CompanyRoleEnum.Carrier)
+                {
+                    var resultItem = new CompanyReport
+                    {
+                        CompanyId = item.Id,
+                        CompanyName = item.CompanyName,
+                        Amount = (totalMoneyGroupByCarrier != null && (float)totalMoneyGroupByCarrier
+                                .Where(t => t.CompanyId == item.Id)
+                                .Select(t => t.TotalPrice).FirstOrDefault() != null) ?
+                                ((float)totalMoneyGroupByCarrier
+                                .Where(t => t.CompanyId == item.Id)
+                                .Select(t => t.TotalPrice).FirstOrDefault() * item.CarrierFeePercentage /100) :
+                                0,
+                        UserCount = usersGroup
+                                .Where(u => u.CompanyId == item.Id)
+                                .Select(u => u.TotalUser)
+                                .FirstOrDefault(),
+                        AdminName = usersGroup
+                                .Where(u => u.CompanyId == item.Id)
+                                .Select(u => u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).FirstName
+                                + " " + u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).LastName)
+                                .FirstOrDefault(),
+                        MachineCount = 0,
+                        CompanyRole = CompanyRoleEnum.Carrier
+                    };
+                    listCompanyReport.Add(resultItem);
+                }    
+            }
 
             return new ResponseModel<DashboardForAdmin>
             {
-
+                Data = new DashboardForAdmin
+                {
+                    ListCompanyReports = listCompanyReport
+                },
+                Success = true
             };
         }
 
@@ -147,24 +275,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
 
             var tenderCompleted = tenders.Where(t => t.TenderStatus == TenderStatuses.Completed).ToList();
 
-            var Bids = _tenderBidRepository
-                .AsNoTracking()
-                .Where(tb => tenderCompleted
-                    .Select(t => t.Id).Contains(tb.TenderId)
-                    && tb.IsSelected == true)
-                .ToList();
-                
-            var bills = _billRepository
-                .AsNoTracking()
-                .Where(b => Bids.Select(tb => tb.Id).Contains(b.TenderBidId)
-                && b.BillType == BillTypeEnum.ShipperToAdminDinoTrans)
-                .ToList();
-
-            var totalTransferMoney = bills.Sum(b => b.vnp_Amount);
-
-            var totalTransportPrice = Bids
-                .Where(b => bills.Select(bs => bs.TenderBidId).Contains(b.Id))
-                .Sum(tb => tb.TransportPrice);
+            var TotalMoneyForAdmin = (tenderCompleted.Sum(t => t.FinalPrice)) * user!.Company!.ShipperFeePercentage / 100;
 
             var statisticByCompany = tenders.Where(t => t.TenderStatus == TenderStatuses.Completed).GroupBy(t => new { t.CompanyCarrierId, t.CompanyCarrier!.CompanyName}).Select(t => new TotalMoneyByCompany
             {
@@ -187,10 +298,15 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     CompletedTenderNumber = completedTenders,
                     AdminInfo = user!,
                     StatisticByCompany = statisticByCompany,
-                    TotalMoneyForAdmin = (float)totalTransferMoney - totalTransportPrice
+                    TotalMoneyForAdmin = (float)TotalMoneyForAdmin
                 },
                 Success = true
             };
+        }
+
+        Task<ResponseModel<DashboardForCarrier>> IDashboardService.GetDashBoardForCarrier(ApplicationUser _currentUser)
+        {
+            throw new NotImplementedException();
         }
     }
 }

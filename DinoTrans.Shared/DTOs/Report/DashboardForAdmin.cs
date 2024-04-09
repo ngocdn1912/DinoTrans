@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DinoTrans.Shared.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,5 +20,6 @@ namespace DinoTrans.Shared.DTOs.Report
         public string AdminName { get; set; }
         public int MachineCount { get; set; }
         public float Amount { get; set; }
+        public CompanyRoleEnum CompanyRole { get; set; }
     }
 }

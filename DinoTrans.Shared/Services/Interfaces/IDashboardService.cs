@@ -13,5 +13,7 @@ namespace DinoTrans.Shared.Services.Interfaces
     {
         Task<ResponseModel<DashboardForShipper>> GetDashBoardForShipper(ApplicationUser _currentUser);
         Task<ResponseModel<DashboardForAdmin>> GetDashBoardForAdmin();
+        Task<ResponseModel<DashboardForCarrier>> GetDashBoardForCarrier(ApplicationUser _currentUser);
+
     }
 }

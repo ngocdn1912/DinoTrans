@@ -161,9 +161,107 @@
     </div>
 }
 
+@if(companyRole == CompanyRoleEnum.Admin)
+{
+    <div class="card">
+        <div class="card-header">
+            <div><b>Chào mừng đến với DinoTrans</b></div>
+            <div>Sàn trung gian vận chuyển phù hợp nhất cho bạn</div>
+        </div>
+
+        <div class="card-body">
+            <div>Thống kê thông tin danh sách công ty tham gia hệ thống</div>
+            <table class="table">
+                <thead class="text-center">
+                    <tr>
+                        <th>Tên công ty</th>
+                        <th>Tổng tài khoản</th>
+                        <th>Số lượng máy vận chuyển</th>
+                        <th>Loại công ty</th>
+                        <th>Quản trị viên công ty</th>
+                        <th>Tổng tiền đã thu được (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var data in dashboardForAdmin.ListCompanyReports)
+                    {
+                        <tr class="text-center">
+                            <td>@data.CompanyName</td>
+                            <td>@data.UserCount</td>
+                            @if (data.CompanyRole == CompanyRoleEnum.Shipper)
+                            {
+                                <td>@data.MachineCount</td>
+                            }
+                            else
+                            {
+                                <td style="background-color:lightgray"></td>
+                            }
+                            @if(data.CompanyRole == CompanyRoleEnum.Shipper)
+                            {
+                                <td>Công ty máy xây dựng</td>
+                            }
+                            else
+                            {
+                                <td>Công ty vận chuyển</td>
+                            }
+                            <td>@data.AdminName</td>
+                            <td>@data.Amount.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer" style="background-color:white">
+            <div class="row col-md-12">
+                <div class="col-md-6">
+                    <h4>Tiền nhận được từ các công ty máy xây dựng</h4>
+                    <RadzenChart style="height: 400px">
+                        <RadzenBarSeries Data="@CompanyShippers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty máy xây dựng" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
+                            <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                        </RadzenBarSeries>
+                        <RadzenValueAxis Min="0" Max="DataShipperMax" Step="@StepShipper" Formatter="@FormatAsVND">
+                            <RadzenGridLines Visible="true" />
+                            <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
+                        </RadzenValueAxis>
+                        <RadzenCategoryAxis>
+                            <RadzenAxisTitle Text="Tên công ty" />
+                        </RadzenCategoryAxis>
+                        <RadzenBarOptions Radius="5" />
+                    </RadzenChart>
+                </div>
+                <div class="col-md-6">
+                    <h4>Tiền nhận được từ các công ty vận chuyển</h4>
+                    <RadzenChart style="height: 400px">
+                        <RadzenBarSeries Data="@CompanyCarriers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty máy xây dựng" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
+                            <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                        </RadzenBarSeries>
+                        <RadzenValueAxis Min="0" Max="DataCarrierMax" Step="@StepCarrier" Formatter="@FormatAsVND">
+                            <RadzenGridLines Visible="true" />
+                            <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
+                        </RadzenValueAxis>
+                        <RadzenCategoryAxis>
+                            <RadzenAxisTitle Text="Tên công ty" />
+                        </RadzenCategoryAxis>
+                        <RadzenBarOptions Radius="5" />
+                    </RadzenChart>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code{
     private readonly ApplicationUser applicationUser;
     public DashboardForShipper dashboardForShipper { get; set; } = new();
+    public DashboardForAdmin dashboardForAdmin { get; set; } = new();
+    public List<CompanyReport> CompanyShippers { get; set; } = new();
+    public List<CompanyReport> CompanyCarriers { get; set; } = new();
+    public float DataShipperMax { get; set; }
+    public float DataCarrierMax { get; set; }
+    public double StepShipper = 1;
+    public double StepCarrier = 1;
+
     public ApplicationUser _currentUser { get; set; } = new ApplicationUser
     {
         FirstName = "",
@@ -176,6 +274,7 @@
     public List<TotalMoneyByCompany> listMoneyByCompany { get; set; } = new();
     protected override async Task OnInitializedAsync()
     {
+        dashboardForAdmin.ListCompanyReports = new();
         var customState = (CustomAuthenticationStateProvider)AuthenticationState;
         authState = await customState.GetAuthenticationStateAsync();
         if (authState.User.Identity.IsAuthenticated)
@@ -201,21 +300,48 @@
             }
         }
 
-        var result = await DashboardService.GetDashBoardForShipper(applicationUser);
-        if (result.Success)
+        if (companyRole == CompanyRoleEnum.Shipper)
         {
-            dashboardForShipper = result.Data;
-            _currentUser = result.Data.AdminInfo;
-            listMoneyByCompany = result.Data.StatisticByCompany;
-            listMoneyByCompany.Add(new TotalMoneyByCompany
+            var result = await DashboardService.GetDashBoardForShipper(applicationUser);
+            if (result.Success)
             {
-                TotalMoney = result.Data.TotalMoneyForAdmin,
-                CompanyName = _currentUser.Company!.CompanyName,
-            });
+                dashboardForShipper = result.Data;
+                _currentUser = result.Data.AdminInfo;
+                listMoneyByCompany = result.Data.StatisticByCompany;
+                listMoneyByCompany.Add(new TotalMoneyByCompany
+                {
+                    TotalMoney = result.Data.TotalMoneyForAdmin,
+                    CompanyName = _currentUser.Company!.CompanyName,
+                });
+            }
+            else
+            {
+                await js.InvokeVoidAsync("alert", result.Message);
+            }
         }
-        else
+        else if(companyRole == CompanyRoleEnum.Admin)
         {
-            await js.InvokeVoidAsync("alert", result.Message);
+            var result = await DashboardService.GetDashBoardForAdmin();
+            if (result.Success)
+            {
+                dashboardForAdmin = result.Data;
+                CompanyShippers.AddRange(dashboardForAdmin.ListCompanyReports.Where(l => l.CompanyRole == CompanyRoleEnum.Shipper));
+                StepShipper = Math.Round(CompanyShippers.Sum(c => c.Amount) / CompanyShippers.Count(),2);
+                CompanyCarriers.AddRange(dashboardForAdmin.ListCompanyReports.Where(l => l.CompanyRole == CompanyRoleEnum.Carrier));
+                StepCarrier = Math.Round(CompanyCarriers.Sum(c => c.Amount) / CompanyCarriers.Count(), 2);
+                DataShipperMax = CompanyShippers.Select(c => c.Amount).Max();
+                DataCarrierMax = CompanyCarriers.Select(c => c.Amount).Max();
+                //listMoneyByCompany = result.Data.StatisticByCompany;
+                //listMoneyByCompany.Add(new TotalMoneyByCompany
+                 //   {
+                  //      TotalMoney = result.Data.TotalMoneyForAdmin,
+                   //     CompanyName = _currentUser.Company!.CompanyName,
+                    //});
+            }
+            else
+            {
+                await js.InvokeVoidAsync("alert", result.Message);
+            }
         }
     }
 
