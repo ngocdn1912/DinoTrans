@@ -14,18 +14,27 @@
         {
             <PageTitle>TendersInExecution</PageTitle>
         }
-        else
+        else if (nav.Uri.Contains("Completed"))
         {
             <PageTitle>TendersCompleted</PageTitle>
+        }
+        else
+        {
+            <PageTitle>TendersLost</PageTitle>
         }
         <div class="card">
             <div class="card-body">
                 @if (nav.Uri.Contains("InExecution"))
                 {
                     <div><b>Tất cả thầu đang tiến hành</b></div>
-                }else
+                }
+                else if (nav.Uri.Contains("Completed"))
                 {
                     <div><b>Tất cả thầu đã hoàn tất</b></div>
+                }
+                else
+                {
+                    <div><b>Tất cả thầu đã thua</b></div>
                 }
                 <hr />
                 <ConstructionMachineSearch searchDTO="searchDTO" searchDTOCallBack="HandleSearchCallBack"></ConstructionMachineSearch>
@@ -78,7 +87,7 @@
                                                     <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
                                                 </svg>
                                             </button>
-                                            @if (nav.Uri.Contains("InExecution"))
+                                            @if (nav.Uri.Contains("InExecution") && companyRole != CompanyRoleEnum.Admin)
                                             {
                                                 var companyId = context.User.FindFirstValue("CompanyId");
                                                 @if (int.TryParse(companyId, out int int_companyId))
@@ -129,12 +138,6 @@
         searchDTO.pageIndex = 1;
         await CallSearch();
     }
-
-    public async Task HandleEvent()
-    {
-        searchDTO.pageIndex = 1;
-        await hubConnection.InvokeAsync("SendTenders");
-    }
     private async Task OnPageChangedAsync(int newPageNumber)
     {
         await Task.Run(() => { searchDTO.pageIndex = newPageNumber; });
@@ -182,8 +185,9 @@
     {
         @if (nav.Uri.Contains("InExecution"))
             nav.NavigateTo($"/Tenders/Details/InExecution/{TenderId}");
-        else
+        else if (nav.Uri.Contains("Completed"))
             nav.NavigateTo($"/Tenders/Details/Completed/{TenderId}");
+        else nav.NavigateTo($"/Tenders/Details/Lost/{TenderId}");
     }
 
     private async Task CallSearch()
@@ -205,6 +209,20 @@
         @if (nav.Uri.Contains("Completed"))
         {
             var result = await TenderService.SearchCompleted(searchDTO, new ApplicationUser
+                {
+                    FirstName = "",
+                    LastName = ""
+                });
+
+            if (result.Success)
+            {
+                tenderInExecutionDTOs = result.Data;
+            }
+        }
+
+        @if (nav.Uri.Contains("Lost"))
+        {
+            var result = await TenderService.SearchLost(searchDTO, new ApplicationUser
                 {
                     FirstName = "",
                     LastName = ""

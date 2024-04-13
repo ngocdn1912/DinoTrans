@@ -110,6 +110,12 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             return Ok(result);
         }
         [HttpPost]
+        public async Task<IActionResult> SearchLost([FromBody] SearchTenderActiveDTO dto)
+        {
+            var result = await _tenderService.SearchLost(dto, _currentUser);
+            return Ok(result);
+        }
+        [HttpPost]
         public async Task<IActionResult> SearchCompleted([FromBody] SearchTenderActiveDTO dto)
         {
             var result = await _tenderService.SearchCompleted(dto, _currentUser);

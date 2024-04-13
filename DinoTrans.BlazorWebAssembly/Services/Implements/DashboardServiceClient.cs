@@ -58,9 +58,23 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             return Generics.DeserializeJsonString<ResponseModel<DashboardForAdmin>>(apiResponse);
         }
 
-        public Task<ResponseModel<DashboardForCarrier>> GetDashBoardForCarrier(ApplicationUser _currentUser)
+        public async Task<ResponseModel<DashboardForCarrier>> GetDashBoardForCarrier(ApplicationUser _currentUser)
         {
-            throw new NotImplementedException();
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetDashBoardForCarrier");
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new ResponseModel<DashboardForCarrier>
+                {
+                    Message = "Có lỗi xảy ra",
+                    Success = false
+                };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<DashboardForCarrier>>(apiResponse);
         }
     }
 }

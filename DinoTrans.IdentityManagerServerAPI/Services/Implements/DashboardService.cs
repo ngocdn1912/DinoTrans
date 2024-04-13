@@ -304,9 +304,95 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             };
         }
 
-        Task<ResponseModel<DashboardForCarrier>> IDashboardService.GetDashBoardForCarrier(ApplicationUser _currentUser)
+        public async Task<ResponseModel<DashboardForCarrier>> GetDashBoardForCarrier(ApplicationUser _currentUser)
         {
-            throw new NotImplementedException();
+            var tenderBids = await _tenderBidRepository
+                .AsNoTracking()
+                .Where(tb => tb.CompanyCarrierId == _currentUser.CompanyId)
+                .ToListAsync();
+
+            var getCompany = _companyRepository
+                .AsNoTracking()
+                .Where(c => c.Id == _currentUser.CompanyId)
+                .FirstOrDefault();
+
+            if (getCompany == null)
+            {
+                return new ResponseModel<DashboardForCarrier>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy công ty vận chuyển"
+                };
+            }
+
+            decimal givenBids = tenderBids.Count();
+            decimal selectedBids = tenderBids.Where(tb => tb.IsSelected).Count();
+
+            var tendersInSelection = (from t in _tenderRepository.AsNoTracking().Where(t => t.TenderStatus == TenderStatuses.Active)
+                                     join tb in _tenderBidRepository.AsNoTracking().Where(tb => tb.CompanyCarrierId == _currentUser.CompanyId) on t.Id equals tb.TenderId
+                                     select new
+                                     {
+                                         tenderId = t.Id
+                                     }).Select(t => t.tenderId).Count();
+
+            var tendersCompleted = _tenderRepository
+                .AsNoTracking()
+                .Where(t => t.TenderStatus == TenderStatuses.Completed
+                && t.CompanyCarrierId == _currentUser.CompanyId)
+                .ToList();
+
+            var tendersInExecution = _tenderRepository
+                .AsNoTracking()
+                .Where(t => t.TenderStatus == TenderStatuses.InExcecution
+                && t.CompanyCarrierId == _currentUser.CompanyId)
+                .Count();
+
+            var countTendersCompleted = tendersCompleted.Count();
+
+            decimal successRate = Math.Round(selectedBids / givenBids * 100, 2);
+            var totalMoneyForAdmin = tendersCompleted.Sum(t => t.FinalPrice) * getCompany.CarrierFeePercentage / 100;
+            var totalSuccessMoney = tendersCompleted.Sum(t => t.FinalPrice) - totalMoneyForAdmin;
+
+            var bidsGroup = tendersCompleted
+                .GroupBy(tb => tb.CompanyShipperId)
+                .Select(t => new TotalMoneyByCompany
+                {
+                    CompanyName = _companyRepository
+                    .AsNoTracking()
+                    .Where(c => c.Id == t.Key)
+                    .Select(t => t.CompanyName)
+                    .FirstOrDefault(),
+                    TotalMoney = (float)t!.Sum(t => t.FinalPrice)
+                }).ToList();
+
+            var adminRole = await _roleManager.FindByNameAsync(Role.DinoTransAdmin);
+            var adminId = await _userRoleRepository
+                .AsNoTracking()
+                .Where(ur => ur.RoleId == adminRole!.Id)
+                .Select(ur => ur.UserId)
+                .FirstOrDefaultAsync();
+
+            var user = await _userRepository
+                .AsNoTracking()
+                .Include(u => u.Company)
+                .Where(u => u.Id == adminId)
+                .FirstOrDefaultAsync();
+            return new ResponseModel<DashboardForCarrier>
+            {
+                Data = new DashboardForCarrier
+                {
+                    GivenBids = (int)givenBids,
+                    TendersInSelection = tendersInSelection,
+                    SuccessRate = successRate,
+                    TendersInExecution = tendersInExecution,
+                    TendersCompleted = countTendersCompleted,
+                    TotalMoneyForAdmin = (float)totalMoneyForAdmin,
+                    TotalSuccessTenderMoney = (float)totalSuccessMoney,
+                    TotalMoneyByShipperCompanies = bidsGroup,
+                    AdminInfo = user!
+                },
+                Success = true
+            };
         }
     }
 }

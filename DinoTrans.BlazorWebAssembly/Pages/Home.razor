@@ -251,10 +251,118 @@
     </div>
 }
 
+@if (companyRole == CompanyRoleEnum.Carrier)
+{
+    <div class="card">
+        <div class="card-header">
+            <div><b>Chào mừng đến với DinoTrans</b></div>
+            <div>Tìm dịch vụ vận chuyển phù hợp nhất cho bạn</div>
+        </div>
+        <div class="card-header">
+            <div class="col-md-12 row">
+                <div class="col-md-6">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.GivenBids
+                            </div>
+                            <div>
+                                Số thầu đã đặt giá
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.TendersInSelection
+                            </div>
+                            <div>
+                                Thầu đang lựa chọn
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.SuccessRate %
+                            </div>
+                            <div>
+                                Tỉ lệ thầu được chọn
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.TendersInExecution
+                            </div>
+                            <div>
+                                Số lượng thầu đang tiến hành
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.TendersCompleted
+                            </div>
+                            <div>
+                                Số lượng thầu đã hoàn thành
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.TotalSuccessTenderMoney.ToString("N0")
+                            </div>
+                            <div>
+                                Tổng tiền thực tế đã nhận được (VNĐ)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div>
+                                @dashboardForCarrier.TotalMoneyForAdmin.ToString("N0")
+                            </div>
+                            <div>
+                                Tổng tiền trung gian cho Admin (VNĐ)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-center" style="background-color:white; align-items:center;">
+                    <img src="./images/logo2.png" alt="Logo" style="max-width: 120px;" />
+                    <div>
+                        <b>@_currentUser.Company!.CompanyName</b>
+                        <div>Chúng tôi là người liên lạc của bạn, chúng tôi sẽ hỗ trợ giải đáp thắc mắc mọi vấn đề liên quan tới vận chuyển và máy xây dựng</div>
+                        <div>Số điện thoại bàn: @_currentUser.PhoneNumber</div>
+                        <div>Số điện thoại di động: @_currentUser.Company.PhoneNumber</div>
+                        <div>Email: @_currentUser.Company.Email</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-header">
+            <div class="col-md-12" style="background-color:white">
+                <h4>Thống kê tiền nhận được</h4>
+                <RadzenChart style="height: 400px">
+                    <RadzenBarSeries Data="@listMoneyByCompany" CategoryProperty="CompanyName" Title="Thống kê tiền vận chuyển" LineType="LineType.Dashed" ValueProperty="TotalMoney" Fill="green">
+                        <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                    </RadzenBarSeries>
+                    <RadzenValueAxis Formatter="@FormatAsVND">
+                        <RadzenGridLines Visible="true" />
+                        <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
+                    </RadzenValueAxis>
+                    <RadzenCategoryAxis>
+                        <RadzenAxisTitle Text="Tên công ty" />
+                    </RadzenCategoryAxis>
+                    <RadzenBarOptions Radius="5" />
+                </RadzenChart>
+            </div>
+        </div>
+    </div>
+}
+
 @code{
     private readonly ApplicationUser applicationUser;
     public DashboardForShipper dashboardForShipper { get; set; } = new();
     public DashboardForAdmin dashboardForAdmin { get; set; } = new();
+    public DashboardForCarrier dashboardForCarrier { get; set; } = new();
     public List<CompanyReport> CompanyShippers { get; set; } = new();
     public List<CompanyReport> CompanyCarriers { get; set; } = new();
     public float DataShipperMax { get; set; }
@@ -333,10 +441,24 @@
                 DataCarrierMax = CompanyCarriers.Select(c => c.Amount).Max();
                 //listMoneyByCompany = result.Data.StatisticByCompany;
                 //listMoneyByCompany.Add(new TotalMoneyByCompany
-                 //   {
-                  //      TotalMoney = result.Data.TotalMoneyForAdmin,
-                   //     CompanyName = _currentUser.Company!.CompanyName,
-                    //});
+                //   {
+                //      TotalMoney = result.Data.TotalMoneyForAdmin,
+                //     CompanyName = _currentUser.Company!.CompanyName,
+                //});
+            }
+            else
+            {
+                await js.InvokeVoidAsync("alert", result.Message);
+            }
+        }
+        else
+        {
+            var result = await DashboardService.GetDashBoardForCarrier(applicationUser);
+            if (result.Success)
+            {
+                dashboardForCarrier = result.Data;
+                _currentUser = result.Data.AdminInfo;
+                listMoneyByCompany = dashboardForCarrier.TotalMoneyByShipperCompanies;
             }
             else
             {

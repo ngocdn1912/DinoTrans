@@ -862,6 +862,84 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             }; 
         }
 
+        public async Task<ResponseModel<List<TenderInExecutionDTO>>> SearchLost(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
+        {
+            var listLost = (from t in _tenderRepository.AsNoTracking().Include(c => c.CompanyShipper).Include(c => c.CompanyCarrier)
+                           .Where(t => t.TenderStatus == TenderStatuses.InExcecution || t.TenderStatus == TenderStatuses.Completed)
+                            join tb in _tenderBidRepository.AsNoTracking()
+                            .Where(tb => !tb.IsSelected && tb.CompanyCarrierId == currentUser.CompanyId) on t.Id equals tb.TenderId
+                            join tc in _tenderConstructionMachineRepository.AsNoTracking() on t.Id equals tc.TenderId
+                            join c in _contructionMachineRepository.AsNoTracking() on tc.ContructionMachineId equals c.Id
+                            select new TenderInExecutionDTO
+                            {
+                                TenderId = t.Id,
+                                TenderName = t.Name,
+                                ConstructionMachines = _contructionMachineRepository
+                                .AsNoTracking()
+                                .Where(con => con.Id == c.Id)
+                                .ToList(),
+                                From = t.PickUpAddress,
+                                To = t.DeliveryAddress,
+                                PickUpDate = (DateTime)t.PickUpDate,
+                                DeliveryDate = (DateTime)t.DeiliverDate,
+                                Status = t.TenderStatus.ToString(),
+                                Bids = _tenderBidRepository
+                                .AsNoTracking()
+                                .Where(tbid => tbid.Id == tb.Id)
+                                .ToList(),
+                                CompanyShipperId = t.CompanyShipperId,
+                                CompanyShipperName = t.CompanyShipper.CompanyName,
+                                CompanyCarrierName = t.CompanyCarrier.CompanyName,
+                                Price = (float)t.FinalPrice
+                            })
+                            .ToList();
+
+            var listLostsNotPaging = listLost.Where(c => dto.SearchText.IsNullOrEmpty()
+                        || c.TenderName.Contains(dto.SearchText!)
+                        || c.ConstructionMachines.Any(cm => cm.Name.Contains(dto.SearchText!)));
+
+            switch (dto.searchLoads)
+            {
+                case SearchActiveByMachines.All:
+                    break;
+                case SearchActiveByMachines.LessThan8Tons:
+                    listLostsNotPaging = listLostsNotPaging.Where(l => l.ConstructionMachines.Any(c => c.Weight < 8000));
+                    break;
+                case SearchActiveByMachines.From8To22Tons:
+                    listLostsNotPaging = listLostsNotPaging.Where(l => l.ConstructionMachines.Any(c => c.Weight >= 8000 && c.Weight < 22000));
+                    break;
+                case SearchActiveByMachines.From22Tons:
+                    listLostsNotPaging = listLostsNotPaging.Where(l => l.ConstructionMachines.Any(c => c.Weight >= 22000));
+                    break;
+            }
+
+            switch (dto.searchOffers)
+            {
+                case SearchActiveByOffers.All:
+                    break;
+                case SearchActiveByOffers.NoOffers:
+                    listLostsNotPaging = listLostsNotPaging.Where(l => l.Bids.Count == 0);
+                    break;
+                case SearchActiveByOffers.MoreThan5Offers:
+                    listLostsNotPaging = listLostsNotPaging.Where(l => l.Bids.Count > 5);
+                    break;
+                case SearchActiveByOffers.Max5Offers:
+                    listLostsNotPaging = listLostsNotPaging.Where(l => l.Bids.Count <= 5);
+                    break;
+            }
+            var listActivePaging = listLostsNotPaging
+                        .Skip((dto.pageIndex - 1) * dto.pageSize)
+                        .Take(dto.pageSize);
+
+            return new ResponseModel<List<TenderInExecutionDTO>>
+            {
+                Data = listActivePaging.ToList(),
+                Success = true,
+                Total = listLostsNotPaging.Count(),
+                PageCount = listLostsNotPaging.Count() / 10 + 1
+            };
+        }
+
         public async Task<ResponseModel<List<TenderActiveDTO>>> SearchToAssignBy(SearchTenderActiveDTO dto, ApplicationUser? currentUser)
         {
             var listToAssign = _tenderRepository

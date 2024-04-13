@@ -3,6 +3,7 @@
 @page "/Tenders/Details/InExecution/{TenderId:int}"
 @page "/Tenders/Details/Completed/{TenderId:int}"
 @page "/Tenders/Details/Withdraw/{TenderId:int}"
+@page "/Tenders/Details/Lost/{TenderId:int}"
 
 @inject IJSRuntime js
 @inject ITenderService TenderService
@@ -156,7 +157,7 @@
 
     <br />
 
-    @if (tenderBids.Count > 0 && (nav.Uri.Contains("InExecution") || nav.Uri.Contains("Completed")) && !nav.Uri.Contains("Withdraw"))
+    @if (tenderBids.Count > 0 && (nav.Uri.Contains("InExecution") || nav.Uri.Contains("Completed")) && !nav.Uri.Contains("Withdraw") || nav.Uri.Contains("Lost"))
     {
         <div class="card-body">
             <label class="form-label">
@@ -274,5 +275,7 @@
             nav.NavigateTo("/Tenders/Completed");
         else if (nav.Uri.Contains("Withdraw"))
             nav.NavigateTo("/Tenders/Withdraw");
+        else if (nav.Uri.Contains("Lost"))
+            nav.NavigateTo("/Tenders/Lost");
     }
 }

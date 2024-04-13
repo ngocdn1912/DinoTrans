@@ -9,26 +9,26 @@
             <div class="column">
                 <div class="card-header text-center column">
                     <img src="/images/ModelConstruction.png" />
-                    <div>Create new construction machine</div>
+                    <div>Tạo mới máy xây dựng</div>
                 </div>
                 <div class="card-body p-4">
                     <div class="form-group mt-3">
-                        <label class="form-label">Product Name</label>
+                        <label class="form-label">Tên máy</label>
                         <input type="text" @bind="newConstructionMachine.Name" class="form-control" />
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">Brand</label>
+                        <label class="form-label">Thương hiệu</label>
                         <input type="text" @bind="newConstructionMachine.Brand" class="form-control" />
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">SerialNumber</label>
+                        <label class="form-label">Số seri</label>
                         <input type="text" @bind="newConstructionMachine.SerialNumber" class="form-control" />
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">Length</label>
+                        <label class="form-label">Chiều dài</label>
                         <div class="row">
                             <div class="col-md-9" style="padding-right:0px">
                                 <input type="number" @bind="newConstructionMachine.Length" class="form-control" />
@@ -40,7 +40,7 @@
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">Width</label>
+                        <label class="form-label">Chiều rộng</label>
                         <div class="row">
                             <div class="col-md-9" style="padding-right:0px">
                                 <input type="number" @bind="newConstructionMachine.Width" class="form-control" />
@@ -52,7 +52,7 @@
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">Height</label>
+                        <label class="form-label">Chiều cao</label>
                         <div class="row">
                             <div class="col-md-9" style="padding-right:0px">
                                 <input type="number" @bind="newConstructionMachine.Height" class="form-control" />
@@ -64,7 +64,7 @@
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">Weight</label>
+                        <label class="form-label">Cân nặng</label>
                         <div class="row">
                             <div class="col-md-9" style="padding-right:0px">
                                 <input type="number" @bind="newConstructionMachine.Weight" class="form-control" />
@@ -75,7 +75,7 @@
                         </div>
                     </div>
                     <div class="form-group mt-3" style="position: relative;">
-                        <label class="form-label">Add Images</label>
+                        <label class="form-label">Thêm ảnh mới</label>
                         <br />
                         <div style="margin-left:150px; width: 150px; height: 150px; background-image: url('/images/UploadImage.png'); background-size: cover; background-repeat: no-repeat; background-position: center; position: absolute;"></div>
                         <InputFile OnChange="@HandleFileSelection" multiple style="margin-left:150px; opacity: 0; width: 150px; height: 150px; position: relative; top: 0; left: 0; cursor: pointer;" />
@@ -92,10 +92,10 @@
                 </div>
                 <div class="card-footer row">
                     <div class="form-group col-md-6">
-                        <button class="btn btn-secondary ms-2" type="submit" @onclick="Close">Cancel</button>
+                        <button class="btn btn-secondary ms-2" type="submit" @onclick="Close">Hủy</button>
                     </div>
                     <div class="form-group col-md-6">
-                        <button style="max-width:100px" class="btn btn-primary float-end me-2" type="submit" @onclick="CreateMachine">Create</button>
+                        <button style="max-width:100px" class="btn btn-primary float-end me-2" type="submit" @onclick="CreateMachine">Tạo mới</button>
                     </div>
                 </div>
             </div>

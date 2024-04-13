@@ -48,5 +48,12 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
             var result = await _dashboardService.GetDashBoardForAdmin();
             return Ok(result);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDashBoardForCarrier()
+        {
+            var result = await _dashboardService.GetDashBoardForCarrier(_currentUser);
+            return Ok(result);
+        }
     }
 }
