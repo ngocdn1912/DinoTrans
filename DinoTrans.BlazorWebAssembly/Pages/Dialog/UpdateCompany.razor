@@ -6,7 +6,7 @@
 
 <button class="btn btn-primary" @onclick="OpenDialog">Chỉnh sửa</button>
 
-<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:500px" id="my-company">
+<dialog style="position:fixed; top:50%; left:50%; transform: translate(-50%, -50%); min-width:500px; min-height:500px" id="my-company-@">
     <EditForm Model="dto">
         <div class="card">
             <div class="column">
@@ -34,6 +34,39 @@
                         <label class="form-label">Số điện thoại</label>
                         <input type="text" @bind="dto.PhoneNumber" class="form-control" />
                     </div>
+
+                    @if (currentCompanyRole.HasValue && currentCompanyRole.Value == CompanyRoleEnum.Admin)
+                    {
+
+                        <div class="form-group mt-3">
+                            <label class="form-label">Phí trung gian công ty máy xây dựng</label>
+                            @if (requestUpdateCompanyRole == CompanyRoleEnum.Shipper)
+                            {
+                                <input type="number" @bind="dto.ShipperFeePercentage" class="form-control" />
+                            }
+                            else
+                            {
+                                <input type="number" style="background-color:lightgray">
+                            }
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label class="form-label">Phí trung gian công ty vận chuyển</label>
+                            @if (requestUpdateCompanyRole == CompanyRoleEnum.Carrier)
+                            {
+                                <input type="number" @bind="dto.CarrierFeePercentage" class="form-control" />
+                            }
+                            else
+                            {
+                                <input type="number" style="background-color:lightgray">
+                            }
+                        </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label">Kích hoạt</label>
+                            <input type="checkbox" @bind="dto.IsActive" class="form-control" />
+                        </div>
+                    }
+
                 </div>
                 <div class="card-footer row">
                     <div class="form-group col-md-6">
@@ -47,11 +80,15 @@
         </div>
     </EditForm>
 </dialog>
-@code {
+    @code {
     [Parameter]
     public UpdateCompanyDTO dto { get; set; } = new();
     [Parameter]
     public EventCallback Finish { get; set; }
+    [Parameter]
+    public CompanyRoleEnum? currentCompanyRole { get; set; } = new();
+    [Parameter]
+    public CompanyRoleEnum? requestUpdateCompanyRole { get; set; } = new();
     async void Close()
     {
         await js.InvokeVoidAsync("CloseDialog", "my-company");
@@ -64,11 +101,7 @@
 
     async Task Update()
     {
-        var result = await CompanyService.UpdateCompanyInforByAdminOfCompany(dto, new ApplicationUser
-        {
-            FirstName = "",
-            LastName = ""
-        });
+        var result = await CompanyService.UpdateCompanyInforByAdminOfCompany(dto);
         await js.InvokeVoidAsync("alert", result.Message);
         if(result.Flag)
         {

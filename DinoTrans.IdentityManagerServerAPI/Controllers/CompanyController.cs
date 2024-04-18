@@ -6,6 +6,7 @@ using DinoTrans.Shared.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.Design;
 using System.Security.Claims;
 
 namespace DinoTrans.IdentityManagerServerAPI.Controllers
@@ -52,6 +53,13 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         public async Task<IActionResult> GetCompanyByCompanyId([FromQuery] int CompanyId)
         {
             var result = await _companyService.GetCompanyByCompanyId(CompanyId);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllCompaniesByAdmin()
+        {
+            var result = await _companyService.GetAllCompaniesByAdmin();
             return Ok(result);
         }
     }

@@ -1,4 +1,4 @@
-﻿@page "/CompanySettings/Company"
+﻿@page "/CompanySettings/Company?{Id:int}"
 @inject ICompanyService CompanyService
 
 <div class="card">
@@ -83,10 +83,87 @@
         </div>
     </div>
 </div>
+@if (myCompany.Role == CompanyRoleEnum.Admin)
+{
+    <div class="card">
+        <div class="card-header">
+            Công ty > <b>Danh sách công ty tham gia hệ thống</b>
+        </div>
+        <br />
+        <div class="card-body">
+            <div style="overflow-x: auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="table-tender">Tên công ty</th>
+                            <th class="table-tender">Email công ty</th>
+                            <th class="table-tender">Số điện thoại công ty</th>
+                            <th class="table-tender">Địa chỉ</th>
+                            <th class="table-tender">Vai trò</th>
+                            <th class="table-tender">Cấu hình phí cho công ty máy xây dựng</th>
+                            <th class="table-tender">Cấu hình phí cho công ty vận chuyển</th>
+                            <th class="table-tender">Trạng thái</th>
+                            <th class="table-tender">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in companies)
+                        {
+                            @if (item.Role != CompanyRoleEnum.Admin)
+                            {
+                                <tr>
+                                    <td class="table-tender">@item.CompanyName</td>
+                                    <td class="table-tender">@item.Email</td>
+                                    <td class="table-tender">@item.PhoneNumber</td>
+                                    <td class="table-tender">@item.Address</td>
+                                    @if (item.Role == CompanyRoleEnum.Shipper)
+                                    {
+                                        <td class="table-tender">Công ty máy xây dựng</td>
+                                        <td class="table-tender">@item.ShipperFeePercentage %</td>
+                                        <td style="background-color:lightgray"></td>
+
+                                    }else
+                                    {
+                                        <td class="table-tender">Công ty vận chuyển</td>
+                                        <td style="background-color:lightgray"></td>
+                                        <td class="table-tender">@item.CarrierFeePercentage %</td>
+                                    }
+                                    @if((bool)item.IsAdminConfirm)
+                                    {
+                                        <td class="table-tender">Đã kích hoạt</td>
+                                    }else
+                                    {
+                                        <td class="table-tender">Chưa kích hoạt</td>
+                                    }
+                                    <td class="table-tender">
+                                    @{
+                                        var newDto = new UpdateCompanyDTO
+                                        {
+                                            CompanyName = item.CompanyName,
+                                            Email = item.Email,
+                                            PhoneNumber = item.PhoneNumber,
+                                            Address = item.Address,
+                                            ShipperFeePercentage = item.ShipperFeePercentage,
+                                            CarrierFeePercentage = item.CarrierFeePercentage,
+                                            IsActive = item.IsAdminConfirm
+                                        };
+                                        <UpdateCompany requestUpdateCompanyRole="item.Role" currentCompanyRole="myCompany.Role" dto="newDto" Finish="HandleFinish"></UpdateCompany>
+                                    }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
 @code {
     public Company myCompany { get; set; } = new();
     public string CompanyRole { get; set; } = "";
     public UpdateCompanyDTO dto { get; set; } = new();
+    public List<GetAllCompanyDTO> companies { get; set; } = new();
     protected override async Task OnInitializedAsync()
     {
         await GetCompany();
@@ -115,6 +192,11 @@
             dto.Email = result.Data.Email;
             StateHasChanged();
         }
+
+        if(myCompany.Role == CompanyRoleEnum.Admin)
+        {
+            companies = (await CompanyService.GetAllCompaniesByAdmin()).Data;
+        };
     }
 
     public async void HandleFinish()

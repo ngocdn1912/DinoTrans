@@ -4,6 +4,7 @@ using DinoTrans.Shared.DTOs.Company;
 using DinoTrans.Shared.Entities;
 using DinoTrans.Shared.GenericModels;
 using DinoTrans.Shared.Services.Interfaces;
+using System.ComponentModel.Design;
 using static DinoTrans.Shared.DTOs.ServiceResponses;
 
 namespace DinoTrans.BlazorWebAssembly.Services.Implements
@@ -41,7 +42,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             return Generics.DeserializeJsonString<ResponseModel<Company>>(apiResponse);
         }
 
-        public async Task<ServiceResponses.GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto, ApplicationUser user)
+        public async Task<ServiceResponses.GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto)
         {
             string token = await _localStorageService.GetItemAsStringAsync("token");
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -74,6 +75,25 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
 
             var apiResponse = await response.Content.ReadAsStringAsync();
             return Generics.DeserializeJsonString<ResponseModel<Company>> (apiResponse);
+        }
+
+        public async Task<ResponseModel<List<GetAllCompanyDTO>>> GetAllCompaniesByAdmin()
+        {
+            string token = await _localStorageService.GetItemAsStringAsync("token");
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await _httpClient
+                .GetAsync($"{BaseUrl}/GetAllCompaniesByAdmin");
+
+            // Đọc phản hồi từ API
+            if (!response.IsSuccessStatusCode)
+                return new ResponseModel<List<GetAllCompanyDTO>>
+                {
+                    Success = false,
+                    Message = "Có lỗi xẩy ra"
+                };
+
+            var apiResponse = await response.Content.ReadAsStringAsync();
+            return Generics.DeserializeJsonString<ResponseModel<List<GetAllCompanyDTO>>>(apiResponse);
         }
     }
 }
