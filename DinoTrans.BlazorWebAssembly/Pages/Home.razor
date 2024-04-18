@@ -220,7 +220,7 @@
                         <RadzenBarSeries Data="@CompanyShippers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty máy xây dựng" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
                             <RadzenSeriesDataLabels Visible="@showDataLabels" />
                         </RadzenBarSeries>
-                        <RadzenValueAxis Min="0" Max="DataShipperMax" Step="@StepShipper" Formatter="@FormatAsVND">
+                        <RadzenValueAxis Formatter="@FormatAsVND">
                             <RadzenGridLines Visible="true" />
                             <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
                         </RadzenValueAxis>
@@ -233,10 +233,10 @@
                 <div class="col-md-6">
                     <h4>Tiền nhận được từ các công ty vận chuyển</h4>
                     <RadzenChart style="height: 400px">
-                        <RadzenBarSeries Data="@CompanyCarriers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty máy xây dựng" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
+                        <RadzenBarSeries Data="@CompanyCarriers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty vận chuyển" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
                             <RadzenSeriesDataLabels Visible="@showDataLabels" />
                         </RadzenBarSeries>
-                        <RadzenValueAxis Min="0" Max="DataCarrierMax" Step="@StepCarrier" Formatter="@FormatAsVND">
+                        <RadzenValueAxis Formatter="@FormatAsVND">
                             <RadzenGridLines Visible="true" />
                             <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
                         </RadzenValueAxis>
@@ -365,10 +365,6 @@
     public DashboardForCarrier dashboardForCarrier { get; set; } = new();
     public List<CompanyReport> CompanyShippers { get; set; } = new();
     public List<CompanyReport> CompanyCarriers { get; set; } = new();
-    public float DataShipperMax { get; set; }
-    public float DataCarrierMax { get; set; }
-    public double StepShipper = 1;
-    public double StepCarrier = 1;
 
     public ApplicationUser _currentUser { get; set; } = new ApplicationUser
     {
@@ -434,11 +430,7 @@
             {
                 dashboardForAdmin = result.Data;
                 CompanyShippers.AddRange(dashboardForAdmin.ListCompanyReports.Where(l => l.CompanyRole == CompanyRoleEnum.Shipper));
-                StepShipper = Math.Round(CompanyShippers.Sum(c => c.Amount) / CompanyShippers.Count(),2);
                 CompanyCarriers.AddRange(dashboardForAdmin.ListCompanyReports.Where(l => l.CompanyRole == CompanyRoleEnum.Carrier));
-                StepCarrier = Math.Round(CompanyCarriers.Sum(c => c.Amount) / CompanyCarriers.Count(), 2);
-                DataShipperMax = CompanyShippers.Select(c => c.Amount).Max();
-                DataCarrierMax = CompanyCarriers.Select(c => c.Amount).Max();
                 //listMoneyByCompany = result.Data.StatisticByCompany;
                 //listMoneyByCompany.Add(new TotalMoneyByCompany
                 //   {

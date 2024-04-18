@@ -153,7 +153,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     {
                         CompanyId = item.Id,
                         CompanyName = item.CompanyName,
-                        Amount = (totalMoneyGroupByShipper != null && (float)totalMoneyGroupByShipper
+                        Amount = (totalMoneyGroupByShipper != null&& totalMoneyGroupByShipper.Count!=0 && (float)totalMoneyGroupByShipper
                                 .Where(t => t.CompanyId == item.Id)
                                 .Select(t => t.TotalPrice).FirstOrDefault() != null) ?
                                 ((float)totalMoneyGroupByShipper
@@ -183,7 +183,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                     {
                         CompanyId = item.Id,
                         CompanyName = item.CompanyName,
-                        Amount = (totalMoneyGroupByCarrier != null && (float)totalMoneyGroupByCarrier
+                        Amount = (totalMoneyGroupByCarrier != null && totalMoneyGroupByCarrier.Count != 0 && (float)totalMoneyGroupByCarrier
                                 .Where(t => t.CompanyId == item.Id)
                                 .Select(t => t.TotalPrice).FirstOrDefault() != null) ?
                                 ((float)totalMoneyGroupByCarrier
