@@ -42,7 +42,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             return Generics.DeserializeJsonString<ResponseModel<Company>>(apiResponse);
         }
 
-        public async Task<ServiceResponses.GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto)
+        public async Task<ServiceResponses.GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto, ApplicationUser user)
         {
             string token = await _localStorageService.GetItemAsStringAsync("token");
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);

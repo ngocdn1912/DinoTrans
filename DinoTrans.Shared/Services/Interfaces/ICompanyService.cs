@@ -13,7 +13,7 @@ namespace DinoTrans.Shared.Services.Interfaces
     public interface ICompanyService
     {
         public Task<ResponseModel<Company>> GetCompanyByCurrentUserId(ApplicationUser user);
-        public Task<GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto);
+        public Task<GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto, ApplicationUser user);
         public Task<ResponseModel<Company>> GetCompanyByCompanyId(int CompanyId);
         public Task<ResponseModel<List<GetAllCompanyDTO>>> GetAllCompaniesByAdmin();
 

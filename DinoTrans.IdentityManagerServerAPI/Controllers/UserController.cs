@@ -58,14 +58,14 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "CompanyAdministrator")]
+        [Authorize]
         public async Task<IActionResult> GetAllUserInfo([FromQuery] GetAllUserInfoDTO userInfo)
         {
             var response = await _userService.GetAllUserInfo(userInfo);
             return Ok(response);
         }
         [HttpPut]
-        [Authorize(Roles = "DinoTransAdmin")]
+        [Authorize(Roles = Role.DinoTransAdmin)]
         public async Task<IActionResult> UpdateAdminConfirm()
         {
             var response = await _userService.UpdateIsAdminConfirm();

@@ -45,7 +45,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto)
         {
-            var result = await _companyService.UpdateCompanyInforByAdminOfCompany(dto);
+            var result = await _companyService.UpdateCompanyInforByAdminOfCompany(dto, _currentUser);
             return Ok(result);
         }
 

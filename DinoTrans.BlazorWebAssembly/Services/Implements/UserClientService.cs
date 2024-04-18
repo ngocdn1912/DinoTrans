@@ -64,6 +64,7 @@ namespace DinoTrans.BlazorWebAssembly.Services.Implements
             return Generics.DeserializeJsonString<LoginResponse>(apiResponse);
         }
 
+
         public async Task<ResponseModel<UserInfoResponseDTO>> GetAllUserInfo(GetAllUserInfoDTO userDTO)
         {
             string token = await _localStorageService.GetItemAsStringAsync("token");

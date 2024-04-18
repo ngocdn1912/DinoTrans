@@ -1,4 +1,4 @@
-﻿@page "/CompanySettings/Company={Id:int}"
+﻿@page "/CompanySettings/Company"
 @inject ICompanyService CompanyService
 
 <div class="card">
@@ -139,6 +139,7 @@
                                     @{
                                         var newDto = new UpdateCompanyDTO
                                         {
+                                            CompanyId = item.Id,
                                             CompanyName = item.CompanyName,
                                             Email = item.Email,
                                             PhoneNumber = item.PhoneNumber,
@@ -197,6 +198,8 @@
         {
             companies = (await CompanyService.GetAllCompaniesByAdmin()).Data;
         };
+
+        StateHasChanged();
     }
 
     public async void HandleFinish()

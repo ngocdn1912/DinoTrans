@@ -46,7 +46,7 @@
                             }
                             else
                             {
-                                <input type="number" style="background-color:lightgray">
+                                <input type="number" style="background-color:lightgray" class="form-control">
                             }
                         </div>
 
@@ -58,12 +58,12 @@
                             }
                             else
                             {
-                                <input type="number" style="background-color:lightgray">
+                                <input type="number" style="background-color:lightgray" class="form-control">
                             }
                         </div>
                         <div class="form-group mt-3">
-                            <label class="form-label">Kích hoạt</label>
-                            <input type="checkbox" @bind="dto.IsActive" class="form-control" />
+                            <input type="checkbox" id="check" name="check" @bind="dto.IsActive"/>
+                            <label for="check" class="form-label">Kích hoạt</label>
                         </div>
                     }
 
@@ -80,7 +80,7 @@
         </div>
     </EditForm>
 </dialog>
-    @code {
+@code {
     [Parameter]
     public UpdateCompanyDTO dto { get; set; } = new();
     [Parameter]
@@ -101,7 +101,11 @@
 
     async Task Update()
     {
-        var result = await CompanyService.UpdateCompanyInforByAdminOfCompany(dto);
+        var result = await CompanyService.UpdateCompanyInforByAdminOfCompany(dto, new ApplicationUser
+        {
+            FirstName = "",
+            LastName = ""
+        });
         await js.InvokeVoidAsync("alert", result.Message);
         if(result.Flag)
         {

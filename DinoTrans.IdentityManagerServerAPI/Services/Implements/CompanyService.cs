@@ -118,11 +118,16 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             };
         }
 
-        public async Task<ServiceResponses.GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto)
+        public async Task<ServiceResponses.GeneralResponse> UpdateCompanyInforByAdminOfCompany(UpdateCompanyDTO dto, ApplicationUser user)
         {
             var company = await _companyRepository
             .AsNoTracking()
                 .Where(c => c.Id == dto.CompanyId)
+                .FirstOrDefaultAsync();
+
+            var currentUserCompany = await _companyRepository
+                .AsNoTracking()
+                .Where(c => c.Id == user.CompanyId)
                 .FirstOrDefaultAsync();
 
             if (company == null)
@@ -135,7 +140,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             company.CompanyName = dto.CompanyName;
             company.Email = dto.Email;
 
-            if(company.Role == Shared.Contracts.CompanyRoleEnum.Admin)
+            if(currentUserCompany.Role == Shared.Contracts.CompanyRoleEnum.Admin)
             {
                 company.ShipperFeePercentage = dto.ShipperFeePercentage != null ? dto.ShipperFeePercentage.Value : 0 ;
                 company.CarrierFeePercentage = dto.CarrierFeePercentage != null ? dto.CarrierFeePercentage.Value : 0;
