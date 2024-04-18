@@ -160,18 +160,18 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                                 .Where(t => t.CompanyId == item.Id)
                                 .Select(t => t.TotalPrice).FirstOrDefault() * item.ShipperFeePercentage /100) :
                                 0,
-                        UserCount = usersGroup
+                        UserCount = usersGroup != null ? usersGroup
                                 .Where(u => u.CompanyId == item.Id)
                                 .Select(u => u.TotalUser)
-                                .FirstOrDefault(),
-                        AdminName = usersGroup
+                                .FirstOrDefault() : 0,
+                        AdminName = usersGroup != null ? usersGroup
                                 .Where(u => u.CompanyId == item.Id)
                                 .Select(u => u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).FirstName
                                 + " " + u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).LastName)
-                                .FirstOrDefault(),
-                        MachineCount = machinesGroup
+                                .FirstOrDefault() : "",
+                        MachineCount = machinesGroup != null ? machinesGroup
                                        .Where(u => u.CompanyId == item.Id)
-                                       .Select(m => m.TotalMachine).FirstOrDefault(),
+                                       .Select(m => m.TotalMachine).FirstOrDefault() : 0,
                         CompanyRole = CompanyRoleEnum.Shipper
 
                     };
@@ -190,15 +190,15 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                                 .Where(t => t.CompanyId == item.Id)
                                 .Select(t => t.TotalPrice).FirstOrDefault() * item.CarrierFeePercentage /100) :
                                 0,
-                        UserCount = usersGroup
+                        UserCount = usersGroup != null ? usersGroup
                                 .Where(u => u.CompanyId == item.Id)
                                 .Select(u => u.TotalUser)
-                                .FirstOrDefault(),
-                        AdminName = usersGroup
+                                .FirstOrDefault() : 0,
+                        AdminName = usersGroup != null ? usersGroup
                                 .Where(u => u.CompanyId == item.Id)
                                 .Select(u => u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).FirstName
                                 + " " + u.Users.FirstOrDefault(us => us.Role == Role.CompanyAdministrator).LastName)
-                                .FirstOrDefault(),
+                                .FirstOrDefault() : "",
                         MachineCount = 0,
                         CompanyRole = CompanyRoleEnum.Carrier
                     };

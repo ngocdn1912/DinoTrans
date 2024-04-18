@@ -91,12 +91,12 @@
     public CompanyRoleEnum? requestUpdateCompanyRole { get; set; } = new();
     async void Close()
     {
-        await js.InvokeVoidAsync("CloseDialog", "my-company");
+        await js.InvokeVoidAsync("CloseDialog", $"my-company-{dto.CompanyId}");
     }
 
     async Task OpenDialog()
     {
-        await js.InvokeVoidAsync("OpenDialog", "my-company");
+        await js.InvokeVoidAsync("OpenDialog", $"my-company-{dto.CompanyId}");
     }
 
     async Task Update()
