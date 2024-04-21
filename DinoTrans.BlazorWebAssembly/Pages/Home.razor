@@ -88,7 +88,7 @@
                                 @dashboardForShipper.WithdrawTenderNumber
                             </div>
                             <div>
-                                Số lượng thầu thu hồi
+                                Số lượng thầu đã hủy
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -96,7 +96,7 @@
                                 @dashboardForShipper.PercentWithdrawTender %
                             </div>
                             <div>
-                                Số lượng thầu đã thu hồi
+                                Số lượng thầu đã hủy
                             </div>
                         </div>
                     </div>
@@ -214,7 +214,6 @@
 
         <div class="card-footer" style="background-color:white">
             <div class="row col-md-12">
-                <div class="col-md-6">
                     <h4>Tiền nhận được từ các công ty máy xây dựng</h4>
                     <RadzenChart style="height: 400px">
                         <RadzenBarSeries Data="@CompanyShippers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty máy xây dựng" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
@@ -229,23 +228,22 @@
                         </RadzenCategoryAxis>
                         <RadzenBarOptions Radius="5" />
                     </RadzenChart>
-                </div>
-                <div class="col-md-6">
-                    <h4>Tiền nhận được từ các công ty vận chuyển</h4>
-                    <RadzenChart style="height: 400px">
-                        <RadzenBarSeries Data="@CompanyCarriers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty vận chuyển" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
-                            <RadzenSeriesDataLabels Visible="@showDataLabels" />
-                        </RadzenBarSeries>
-                        <RadzenValueAxis Formatter="@FormatAsVND">
-                            <RadzenGridLines Visible="true" />
-                            <RadzenAxisTitle Text="Tiền phải trả (VNĐ)" />
-                        </RadzenValueAxis>
-                        <RadzenCategoryAxis>
-                            <RadzenAxisTitle Text="Tên công ty" />
-                        </RadzenCategoryAxis>
-                        <RadzenBarOptions Radius="5" />
-                    </RadzenChart>
-                </div>
+            </div>
+            <div class="row col-md-12">
+                <h4>Tiền nhận được từ các công ty vận chuyển</h4>
+                <RadzenChart style="height: 400px">
+                    <RadzenBarSeries Data="@CompanyCarriers" CategoryProperty="CompanyName" Title="Tiền nhận được từ công ty vận chuyển" LineType="LineType.Dashed" ValueProperty="Amount" Fill="green">
+                        <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                    </RadzenBarSeries>
+                    <RadzenValueAxis Formatter="@FormatAsVND">
+                        <RadzenGridLines Visible="true" />
+                        <RadzenAxisTitle Text="Tiền nhận được (VNĐ)" />
+                    </RadzenValueAxis>
+                    <RadzenCategoryAxis>
+                        <RadzenAxisTitle Text="Tên công ty" />
+                    </RadzenCategoryAxis>
+                    <RadzenBarOptions Radius="5" />
+                </RadzenChart>
             </div>
         </div>
     </div>

@@ -109,7 +109,7 @@
         var companyCarrier = await CompanyService.GetCompanyByCompanyId(selectedBid.CompanyCarrierId);
         if (companyCarrier.Success)
         {
-            PercentFeeForCarrier = companyCarrier.Data.ShipperFeePercentage;
+            PercentFeeForCarrier = companyCarrier.Data.CarrierFeePercentage;
             Fee = selectedBid.TransportPrice * PercentFeeForCarrier / 100;
             Total = selectedBid.TransportPrice - Fee;
         }

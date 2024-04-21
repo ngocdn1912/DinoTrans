@@ -1179,7 +1179,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             foreach(var item in listTenders)
             {
                 item.TenderStatus = TenderStatuses.Withdrawn;
-                item.WithdrawReason = "Auto withdraw by system";
+                item.WithdrawReason = "Tự động hủy bởi hệ thống";
             }
 
             _tenderRepository.UpdateRange(listTenders);

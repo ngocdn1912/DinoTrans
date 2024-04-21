@@ -47,7 +47,7 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
         public async Task<ResponseModel<DashboardForAdmin>> GetDashBoardForAdmin()
         {
             var companies = _companyRepository.Queryable();
-            var companiesShipper = from c in companies.Where(c => c.Role == CompanyRoleEnum.Shipper)
+            var companiesShipper = (from c in companies.Where(c => c.Role == CompanyRoleEnum.Shipper)
                             join t in _tenderRepository.AsNoTracking().Where(t => t.TenderStatus == TenderStatuses.Completed) on c.Id equals t.CompanyShipperId
                             select new
                             {
@@ -55,9 +55,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                                 CompanyName = c.CompanyName,                              
                                 Price = t.FinalPrice,
                                 Role = c.Role
-                            };
+                            }).ToList();
 
-            var companiesCarrier = from c in companies.Where(c => c.Role == CompanyRoleEnum.Carrier)
+            var companiesCarrier = (from c in companies.Where(c => c.Role == CompanyRoleEnum.Carrier)
                                    join t in _tenderRepository.AsNoTracking().Where(t => t.TenderStatus == TenderStatuses.Completed) on c.Id equals t.CompanyCarrierId
                                    select new
                                    {
@@ -65,9 +65,9 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                                        CompanyName = c.CompanyName,
                                        Price = t.FinalPrice,
                                        Role = c.Role
-                                   };
+                                   }).ToList();
 
-            var usersInCompany = from c in companies
+            var usersInCompany = (from c in companies
                                  join u in _userRepository.AsNoTracking() on c.Id equals u.CompanyId
                                  join ur in _userRoleRepository.AsNoTracking() on u.Id equals ur.UserId
                                  join r in _roleRepository.AsNoTracking() on ur.RoleId equals r.Id
@@ -78,15 +78,15 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                                      FirstName = u.FirstName,
                                      LastName = u.LastName,
                                      Role = r.Name
-                                 };
+                                 }).ToList();
 
-            var machinesInCompany = from c in companies
+            var machinesInCompany = (from c in companies
                                     join mc in _constructionMachineRepository.AsNoTracking() on c.Id equals mc.CompanyShipperId
                                     select new
                                     {
                                         CompanyId = c.Id,
                                         MachineId = c.Id
-                                    };
+                                    }).ToList();
 
             var totalMoneyGroupByShipper = companiesShipper
                 .Select(c => new
@@ -149,17 +149,14 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
             {
                 if (item.Role == CompanyRoleEnum.Shipper)
                 {
+                    var group = totalMoneyGroupByShipper
+                                .Where(t => t.CompanyId == item.Id).FirstOrDefault();
+                    var groupAmount = group != null ? group.TotalPrice * item.ShipperFeePercentage / 100 : 0;
                     var resultItem = new CompanyReport
                     {
                         CompanyId = item.Id,
                         CompanyName = item.CompanyName,
-                        Amount = (totalMoneyGroupByShipper != null&& totalMoneyGroupByShipper.Count!=0 && (float)totalMoneyGroupByShipper
-                                .Where(t => t.CompanyId == item.Id)
-                                .Select(t => t.TotalPrice).FirstOrDefault() != null) ?
-                                ((float)totalMoneyGroupByShipper
-                                .Where(t => t.CompanyId == item.Id)
-                                .Select(t => t.TotalPrice).FirstOrDefault() * item.ShipperFeePercentage /100) :
-                                0,
+                        Amount = (float)groupAmount,
                         UserCount = usersGroup != null ? usersGroup
                                 .Where(u => u.CompanyId == item.Id)
                                 .Select(u => u.TotalUser)
@@ -179,17 +176,14 @@ namespace DinoTrans.IdentityManagerServerAPI.Services.Implements
                 }
                 else if(item.Role == CompanyRoleEnum.Carrier)
                 {
+                    var group = totalMoneyGroupByCarrier
+                                .Where(t => t.CompanyId == item.Id).FirstOrDefault();
+                    var groupAmount = group != null ? group.TotalPrice * item.CarrierFeePercentage/100 : 0;
                     var resultItem = new CompanyReport
                     {
                         CompanyId = item.Id,
                         CompanyName = item.CompanyName,
-                        Amount = (totalMoneyGroupByCarrier != null && totalMoneyGroupByCarrier.Count != 0 && (float)totalMoneyGroupByCarrier
-                                .Where(t => t.CompanyId == item.Id)
-                                .Select(t => t.TotalPrice).FirstOrDefault() != null) ?
-                                ((float)totalMoneyGroupByCarrier
-                                .Where(t => t.CompanyId == item.Id)
-                                .Select(t => t.TotalPrice).FirstOrDefault() * item.CarrierFeePercentage /100) :
-                                0,
+                        Amount = (float)groupAmount,
                         UserCount = usersGroup != null ? usersGroup
                                 .Where(u => u.CompanyId == item.Id)
                                 .Select(u => u.TotalUser)
